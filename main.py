@@ -271,14 +271,14 @@ def debug_connection():
             "checked_in": pool.checkedin(),
             "checked_out": pool.checkedout(),
             "overflow": pool.overflow(),
-            "invalid": pool.invalid()
+            "pool_type": type(pool).__name__
         }
         
         return {
             "status": "success",
             "connection_test": test_value,
             "pool_status": pool_status,
-            "database_url": os.getenv("DATABASE_URL", "not_set")[:50] + "...",
+            "database_url": str(engine.url)[:50] + "...",
             "message": "Database connection successful"
         }
         
@@ -287,7 +287,7 @@ def debug_connection():
             "status": "error",
             "error": str(e),
             "error_type": type(e).__name__,
-            "database_url": os.getenv("DATABASE_URL", "not_set")[:50] + "...",
+            "database_url": str(engine.url)[:50] + "..." if 'engine' in locals() else "not_available",
             "message": "Database connection failed"
         }
 
