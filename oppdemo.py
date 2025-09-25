@@ -47,8 +47,12 @@ def ensure_backup_dir():
 
 def ensure_upload_dirs():
     """Ensure static upload directories exist regardless of current working directory."""
-    project_root = Path(__file__).resolve().parent
-    uploads_root = project_root / "static" / "uploads"
+    import os
+    from pathlib import Path
+    
+    # Use environment variable if set, otherwise use default
+    upload_dir = os.getenv("UPLOAD_DIR", "static/uploads")
+    uploads_root = Path(upload_dir)
     photos_dir = uploads_root / "photos"
     sample_photos_dir = uploads_root / "sample_photos"
     uploads_root.mkdir(parents=True, exist_ok=True)
