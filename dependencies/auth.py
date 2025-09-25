@@ -77,7 +77,7 @@ async def get_current_user_from_cookies(
         )
 
     # Get user from database using injected session
-    result = await session.execute(select(User).where(User.id == user_uuid))
+    result = session.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
