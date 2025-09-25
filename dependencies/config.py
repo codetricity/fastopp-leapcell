@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     (e.g., DATABASE_URL, SECRET_KEY, ENVIRONMENT) and are case-insensitive.
 
     Example production overrides:
-    - DATABASE_URL="sqlite+aiosqlite:////data/test.db"
+    - DATABASE_URL="sqlite+aiosqlite:////tmp/test.db"  # For Leapcell
     - SECRET_KEY="your-secure-production-key"
     - ENVIRONMENT="production"
     - UPLOAD_DIR="/data/uploads"

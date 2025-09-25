@@ -106,6 +106,93 @@ async def health_check():
     return {"status": "healthy", "message": "FastOpp Demo app is running"}
 
 
+@app.post("/async/init-demo")
+async def init_demo_async():
+    """Initialize demo data using Leapcell's async task system"""
+    try:
+        print("🚀 Starting demo initialization...")
+        
+        # Import and run the initialization
+        from oppdemo import run_full_init
+        await run_full_init()
+        
+        print("✅ Demo initialization complete!")
+        return {
+            "status": "success", 
+            "message": "Demo initialization completed successfully",
+            "details": {
+                "database_initialized": True,
+                "superuser_created": "admin@example.com / admin123",
+                "test_users_added": True,
+                "sample_data_added": True
+            }
+        }
+    except Exception as e:
+        print(f"❌ Demo initialization failed: {e}")
+        return {
+            "status": "error", 
+            "message": f"Demo initialization failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
+@app.get("/debug/database")
+async def debug_database():
+    """Debug database configuration and permissions"""
+    import os
+    from pathlib import Path
+    
+    # Get current database configuration
+    settings = get_settings()
+    db_path = settings.database_url.replace("sqlite+aiosqlite:///", "").replace("sqlite+aiosqlite:////", "/")
+    
+    # Check if database file exists and is writable
+    db_file = Path(db_path)
+    db_exists = db_file.exists()
+    db_writable = False
+    db_size = 0
+    
+    if db_exists:
+        try:
+            db_size = db_file.stat().st_size
+            # Try to open in append mode to test write permissions
+            with open(db_file, "a") as f:
+                db_writable = True
+        except Exception as e:
+            db_writable = False
+    
+    # Check directory permissions
+    db_dir = db_file.parent
+    dir_writable = False
+    try:
+        test_file = db_dir / "test_write.tmp"
+        test_file.write_text("test")
+        test_file.unlink()
+        dir_writable = True
+    except Exception:
+        dir_writable = False
+    
+    return {
+        "database_url": settings.database_url,
+        "database_path": str(db_path),
+        "database_exists": db_exists,
+        "database_writable": db_writable,
+        "database_size_bytes": db_size,
+        "directory_writable": dir_writable,
+        "environment": settings.environment,
+        "upload_dir": settings.upload_dir,
+        "suggestions": {
+            "use_tmp": not db_writable and not dir_writable,
+            "leapcell_recommended": "/tmp/test.db",
+            "alternative_paths": [
+                "/tmp/test.db",
+                "/data/test.db",
+                "./test.db"
+            ]
+        }
+    }
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle HTTP exceptions and redirect to login if authentication fails"""
