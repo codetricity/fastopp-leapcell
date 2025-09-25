@@ -5,11 +5,11 @@ import asyncio
 from db import SessionLocal
 
 
-async def add_sample_products():
+def add_sample_products():
     """Add sample products to the database"""
     from models import Product  # Import inside function to avoid module-level import error
     
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         # Sample product data
         sample_products = [
             {
@@ -74,7 +74,7 @@ async def add_sample_products():
             product = Product(**product_data)
             session.add(product)
         
-        await session.commit()
+        session.commit()
         print("✅ Added sample products to database!")
         print(f"Added {len(sample_products)} products:")
         for product in sample_products:
@@ -82,4 +82,4 @@ async def add_sample_products():
 
 
 if __name__ == "__main__":
-    asyncio.run(add_sample_products()) 
+    add_sample_products() 

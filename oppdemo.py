@@ -96,10 +96,10 @@ def run_users():
     print("✅ Test users creation complete")
 
 
-async def run_products():
+def run_products():
     """Add sample products"""
     print("🔄 Adding sample products...")
-    await add_sample_products()
+    add_sample_products()
     print("✅ Sample products creation complete")
 
 
@@ -173,7 +173,7 @@ def run_full_init():
             run_init()
             run_superuser()
             run_users()
-            asyncio.run(run_products())
+            run_products()
             asyncio.run(run_webinars())
             asyncio.run(run_download_photos())
             asyncio.run(run_registrants())
