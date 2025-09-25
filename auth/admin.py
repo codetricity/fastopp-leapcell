@@ -5,7 +5,7 @@ Simple version without dependency injection
 from fastapi import Request
 from fastapi_users.password import PasswordHelper
 from sqlmodel import select
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 from sqladmin.authentication import AuthenticationBackend
 
@@ -23,8 +23,8 @@ class AdminAuth(AuthenticationBackend):
         if not username or not password:
             return False
 
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(
+        with SessionLocal() as session:
+            result = session.execute(
                 select(User).where(User.email == username)
             )
             user = result.scalar_one_or_none()

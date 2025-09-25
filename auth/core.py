@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import HTTPException, Request, status
 from fastapi_users.password import PasswordHelper
 from sqlmodel import select
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 
 
@@ -54,8 +54,8 @@ async def get_current_user_from_cookies(request: Request):
         )
     
     # Get user from database
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(select(User).where(User.id == user_uuid))
+    with SessionLocal() as session:
+        result = session.execute(select(User).where(User.id == user_uuid))
         user = result.scalar_one_or_none()
         
         if user is None:

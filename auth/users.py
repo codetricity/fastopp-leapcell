@@ -8,7 +8,7 @@ from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import CookieAuthentication
 from fastapi_users.password import PasswordHelper
 from sqlmodel import select
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 
 # Simple cookie authentication
@@ -30,23 +30,23 @@ class UserManager:
     def __init__(self):
         self.password_helper = PasswordHelper()
 
-    async def get(self, user_id: uuid.UUID) -> User:
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(select(User).where(User.id == user_id))
+    def get(self, user_id: uuid.UUID) -> User:
+        with SessionLocal() as session:
+            result = session.execute(select(User).where(User.id == user_id))
             user = result.scalar_one_or_none()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             return user
 
-    async def get_by_email(self, email: str) -> User:
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(select(User).where(User.email == email))
+    def get_by_email(self, email: str) -> User:
+        with SessionLocal() as session:
+            result = session.execute(select(User).where(User.email == email))
             user = result.scalar_one_or_none()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             return user
 
-    async def create(self, user_create: dict) -> User:
+    def create(self, user_create: dict) -> User:
         # Simple user creation - in production, use proper validation
         user = User(
             email=user_create["email"],
@@ -55,10 +55,10 @@ class UserManager:
             is_superuser=False,
             is_staff=False
         )
-        async with AsyncSessionLocal() as session:
+        with SessionLocal() as session:
             session.add(user)
-            await session.commit()
-            await session.refresh(user)
+            session.commit()
+            session.refresh(user)
             return user
 
 def get_user_manager():
