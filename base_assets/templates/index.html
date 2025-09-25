@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to FastOpp Base Assets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ai-blue': '#3B82F6',
+                        'ai-purple': '#8B5CF6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">FastOpp Base Assets</h1>
+                    </div>
+                    <nav class="flex space-x-8">
+                        <a href="/" class="text-ai-blue hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="/admin/" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Admin</a>
+                        <a href="/login" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-extrabold text-gray-900 mb-4">
+                        🚀 Welcome to FastOpp Base Assets
+                    </h1>
+                    <p class="text-xl text-gray-600">
+                        A minimal FastAPI application with authentication and protected content
+                    </p>
+                </div>
+
+                <!-- Getting Started Section -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Getting Started</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Quick Setup Commands</h3>
+                            <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+                                <div class="flex items-center">
+                                    <span class="text-green-500 mr-3">1.</span>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">uv run python oppman.py db</code>
+                                    <span class="text-gray-600 ml-3">Initialize database</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-green-500 mr-3">2.</span>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">uv run python oppman.py superuser</code>
+                                    <span class="text-gray-600 ml-3">Create admin user</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-green-500 mr-3">3.</span>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">uv run python oppman.py runserver</code>
+                                    <span class="text-gray-600 ml-3">Start the application</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Default Admin Login</h3>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p class="text-blue-800 font-medium">Email: <code class="bg-blue-100 px-2 py-1 rounded">admin@example.com</code></p>
+                                <p class="text-blue-800 font-medium">Password: <code class="bg-blue-100 px-2 py-1 rounded">admin123</code></p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Change Password</h3>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">uv run python oppman.py change_password</code>
+                                <span class="text-gray-600 ml-3">Interactive password change for any user</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Admin Panel Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="text-center">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-ai-blue text-white mb-4">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Admin Panel</h3>
+                            <p class="text-gray-600 mb-4">Access the SQLAdmin interface for database management</p>
+                            <a href="/admin/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-ai-blue hover:bg-blue-700">
+                                Go to Admin
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Protected Content Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="text-center">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white mb-4">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Protected Content</h3>
+                            <p class="text-gray-600 mb-4">Access password-protected content and user information</p>
+                            <a href="/login" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600">
+                                Login to Access
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

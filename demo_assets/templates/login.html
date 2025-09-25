@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - FastOpp</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/favicon.ico') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.6"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ai-blue': '#3B82F6',
+                        'ai-purple': '#8B5CF6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        {% include 'partials/header.html' %}
+
+        <!-- Main Content -->
+        <main class="flex-grow flex items-center justify-center">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Sign in to access Webinar Registrants
+                    </h2>
+                    <p class="mt-2 text-center text-sm text-gray-600">
+                        Staff or admin access required
+                    </p>
+                </div>
+                
+                {% if error %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {{ error }}
+                </div>
+                {% endif %}
+                
+                <form class="mt-8 space-y-6" method="POST" action="/login">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="username" class="sr-only">Email address</label>
+                            <input id="username" name="username" type="email" required 
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-ai-blue focus:border-ai-blue focus:z-10 sm:text-sm" 
+                                   placeholder="Email address">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Password</label>
+                            <input id="password" name="password" type="password" required 
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-ai-blue focus:border-ai-blue focus:z-10 sm:text-sm" 
+                                   placeholder="Password">
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" 
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-ai-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ai-blue">
+                            Sign in
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html> 

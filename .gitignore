@@ -1,0 +1,52 @@
+# logs
+logs/
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Database files
+test.db
+test.db.*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+# Ignore timestamped backups like main.py.20250808_144836
+/main.py.*
+# Ignore backups directory
+backups/
+
+# User-uploaded files
+# Ignore everything under uploads except sample_photos and a directory placeholder
+static/uploads/*
+!static/uploads/.gitkeep
+!static/uploads/sample_photos/**
+
+# Alembic migration files
+# Ignore migration files but keep the versions directory structure
+alembic/versions/*.py
+alembic/versions_backup_*/
+
+# Cookies and session files
+cookies.txt
+*.cookies
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

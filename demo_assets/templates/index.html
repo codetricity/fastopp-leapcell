@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='/favicon.ico') }}">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ai-blue': '#3B82F6',
+                        'ai-purple': '#8B5CF6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col">
+        {% include 'partials/header.html' %}
+
+        <!-- Main Content -->
+        <main class="flex-grow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center">
+                    <h1 class="text-4xl font-bold text-gray-900 mb-6">{{ title }}</h1>
+                    <p class="text-xl text-gray-600 mb-8">
+                        FastAPI starter kit with admin tools and interactive demos. Designed for students.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 max-w-6xl mx-auto">
+                        <!-- Design Demo Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-gradient-to-br from-ai-blue to-ai-purple rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">Design Demo</h3>
+                                <p class="text-gray-600 mb-6">
+                                    See Tailwind CSS, HTMX, and Alpine.js in action with an interactive AI marketing demo.
+                                </p>
+                            </div>
+                            <a href="/design-demo" 
+                               class="inline-block bg-gradient-to-r from-ai-blue to-ai-purple text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all">
+                                View Demo
+                            </a>
+                        </div>
+
+                        <!-- Database Demo Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-purple-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">Database Demo</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Real-time analytics and insights for marketing managers with interactive charts.
+                                </p>
+                            </div>
+                            <a href="/database-demo" 
+                               class="inline-block bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-600 transition-colors">
+                                View Database Demo
+                            </a>
+                        </div>
+
+                        <!-- Webinar Demo Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">Webinar Demo</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Showcase your webinar community with beautiful attendee profiles and engagement metrics.
+                                </p>
+                            </div>
+                            <a href="/webinar-demo" 
+                               class="inline-block bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-500 hover:to-red-600 transition-all">
+                                View Webinar Demo
+                            </a>
+                        </div>
+
+                        <!-- AI Demo Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">AI Demo</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Using Tailwind CSS, HTMX, and Alpine.js. Plus DaisyUI and OpenRouter. And Llama 3.3 70B.
+                                </p>
+                            </div>
+                            <a href="/ai-demo" 
+                               class="inline-block bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all">
+                                View AI Demo
+                            </a>
+                        </div>
+
+                        <!-- Webinar Manage Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">Webinar Manage</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Manage webinar registrants with basic operations like Add and Delete Registrant, Add Image, Edit Text. Custom admin panel, not using SQLAdmin.
+                                </p>
+                            </div>
+                            <a href="/webinar-registrants" 
+                               class="inline-block bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">
+                                Manage Webinars
+                            </a>
+                        </div>
+
+                        <!-- Admin Panel Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-ai-blue rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">Admin Panel</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Manage users, products, and data with the built-in admin interface. Using SQLAdmin.
+                                </p>
+                            </div>
+                            <a href="/admin/" 
+                               class="inline-block bg-ai-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                Access Admin
+                            </a>
+                        </div>
+
+                        <!-- API Docs Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow flex flex-col lg:col-span-1 lg:col-start-2">
+                            <div class="flex-1">
+                                <div class="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-900">API Documentation</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Explore the FastAPI auto-generated documentation and test endpoints.
+                                </p>
+                            </div>
+                            <a href="/docs" 
+                               class="inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                                View Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        {% include 'partials/footer.html' %}
+    </div>
+</body>
+</html>
