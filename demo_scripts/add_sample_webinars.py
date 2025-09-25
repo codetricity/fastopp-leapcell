@@ -7,11 +7,11 @@ from db import SessionLocal
 from sqlmodel import select
 
 
-async def add_sample_webinars():
+def add_sample_webinars():
     """Add sample webinar registrants to the database"""
     from models import WebinarRegistrants  # Import inside function to avoid module-level import error
     
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         
         # Sample webinar registrants with different groups and sales reps
         webinars = [
@@ -115,7 +115,7 @@ async def add_sample_webinars():
         
         for webinar_data in webinars:
             # Skip if registrant already exists (idempotent by email)
-            result = await session.execute(
+            result = session.execute(
                 select(WebinarRegistrants).where(WebinarRegistrants.email == webinar_data["email"])  # type: ignore[index]
             )
             if result.scalar_one_or_none():
@@ -124,7 +124,7 @@ async def add_sample_webinars():
             registrant = WebinarRegistrants(**webinar_data)
             session.add(registrant)
         
-        await session.commit()
+        session.commit()
         print("✅ Added sample webinar registrants to database (skipping existing)")
         print("Sample webinars:")
         print("- FastAPI Best Practices (TechCorp)")
@@ -143,4 +143,4 @@ async def add_sample_webinars():
 
 
 if __name__ == "__main__":
-    asyncio.run(add_sample_webinars()) 
+    add_sample_webinars() 

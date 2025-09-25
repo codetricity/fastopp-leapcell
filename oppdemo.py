@@ -103,10 +103,10 @@ def run_products():
     print("✅ Sample products creation complete")
 
 
-async def run_webinars():
+def run_webinars():
     """Add sample webinars"""
     print("🔄 Adding sample webinars...")
-    await add_sample_webinars()
+    add_sample_webinars()
     print("✅ Sample webinars creation complete")
 
 
@@ -174,7 +174,7 @@ def run_full_init():
             run_superuser()
             run_users()
             run_products()
-            asyncio.run(run_webinars())
+            run_webinars()
             asyncio.run(run_download_photos())
             asyncio.run(run_registrants())
             asyncio.run(run_clear_registrants())
