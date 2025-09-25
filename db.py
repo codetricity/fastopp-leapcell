@@ -9,6 +9,11 @@ load_dotenv()
 # Get database URL from environment (defaults to SQLite for development)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
+# For PostgreSQL, add SSL and timeout parameters to the URL
+if "postgresql" in DATABASE_URL and "?" not in DATABASE_URL:
+    # Add SSL and timeout parameters to the connection URL
+    DATABASE_URL += "?sslmode=require&connect_timeout=30&command_timeout=30"
+
 # Debug: Print the database URL (without password for security)
 print(f"🔍 Database URL: {DATABASE_URL}")
 if "postgresql" in DATABASE_URL:
@@ -17,31 +22,19 @@ if "postgresql" in DATABASE_URL:
     masked_url = re.sub(r':[^@]+@', ':***@', DATABASE_URL)
     print(f"🔍 Masked URL: {masked_url}")
 
-# Create async engine with SSL configuration
+# Create async engine with minimal configuration
 connect_args = {}
-if "postgresql" in DATABASE_URL:
-    # For PostgreSQL, handle SSL mode properly with aggressive timeout settings
-    connect_args = {
-        "server_settings": {
-            "application_name": "fastopp_leapcell",
-            "statement_timeout": "30000",  # 30 seconds
-            "idle_in_transaction_session_timeout": "30000",  # 30 seconds
-            "tcp_keepalives_idle": "600",
-            "tcp_keepalives_interval": "30",
-            "tcp_keepalives_count": "3"
-        }
-    }
 
 async_engine = create_async_engine(
     DATABASE_URL,
     echo=True,  # set to False in production
     future=True,
-    connect_args={**connect_args, "command_timeout": 30},
-    pool_timeout=10,  # Reduced from 30
-    pool_recycle=1800,  # Reduced from 3600 (30 minutes)
+    connect_args=connect_args,
+    pool_timeout=30,
+    pool_recycle=3600,
     pool_pre_ping=True,
-    pool_size=5,  # Smaller pool size
-    max_overflow=10  # Allow some overflow
+    pool_size=1,  # Minimal pool size
+    max_overflow=0  # No overflow
 )
 
 # Session factory
