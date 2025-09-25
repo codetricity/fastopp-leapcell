@@ -74,9 +74,13 @@ async def add_sample_registrants():
     ]
     
     # Setup photo directories
-    sample_photos_dir = Path("static/uploads/sample_photos")
-    photos_dir = Path("static/uploads/photos")
-    photos_dir.mkdir(exist_ok=True)
+    import os
+    
+    # Use environment variable if set, otherwise use default
+    upload_dir = os.getenv("UPLOAD_DIR", "static/uploads")
+    sample_photos_dir = Path(upload_dir) / "sample_photos"
+    photos_dir = Path(upload_dir) / "photos"
+    photos_dir.mkdir(parents=True, exist_ok=True)
     
     async with AsyncSessionLocal() as session:
         for registrant_data in sample_registrants:

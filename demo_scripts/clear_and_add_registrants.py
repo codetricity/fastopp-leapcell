@@ -74,10 +74,13 @@ async def clear_and_add_registrants():
         }
     ]
     
-    # Setup photo directories (resolve relative to project root and ensure parents exist)
-    project_root = Path(__file__).resolve().parent.parent
-    sample_photos_dir = project_root / "static" / "uploads" / "sample_photos"
-    photos_dir = project_root / "static" / "uploads" / "photos"
+    # Setup photo directories (use environment variable if set)
+    import os
+    
+    # Use environment variable if set, otherwise use default
+    upload_dir = os.getenv("UPLOAD_DIR", "static/uploads")
+    sample_photos_dir = Path(upload_dir) / "sample_photos"
+    photos_dir = Path(upload_dir) / "photos"
     photos_dir.mkdir(parents=True, exist_ok=True)
     
     async with AsyncSessionLocal() as session:

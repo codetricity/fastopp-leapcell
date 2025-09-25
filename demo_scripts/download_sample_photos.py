@@ -38,8 +38,12 @@ SAMPLE_PHOTOS = [
 
 def download_sample_photos():
     """Download sample photos for the demo"""
-    sample_dir = Path("static/uploads/sample_photos")
-    sample_dir.mkdir(exist_ok=True)
+    import os
+    
+    # Use environment variable if set, otherwise use default
+    upload_dir = os.getenv("UPLOAD_DIR", "static/uploads")
+    sample_dir = Path(upload_dir) / "sample_photos"
+    sample_dir.mkdir(parents=True, exist_ok=True)
     
     print("Downloading sample photos...")
     
