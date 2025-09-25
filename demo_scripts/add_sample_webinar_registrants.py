@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from db import SessionLocal
 
 
-async def add_sample_registrants():
+def add_sample_registrants():
     """Add sample webinar registrants to the database with photos"""
     from models import WebinarRegistrants  # Import inside function to avoid module-level import error
     
@@ -82,11 +82,11 @@ async def add_sample_registrants():
     photos_dir = Path(upload_dir) / "photos"
     photos_dir.mkdir(parents=True, exist_ok=True)
     
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         for registrant_data in sample_registrants:
             # Check if registrant already exists
             from sqlmodel import select
-            existing = await session.execute(
+            existing = session.execute(
                 select(WebinarRegistrants).where(WebinarRegistrants.email == registrant_data['email'])
             )
             if existing.scalar_one_or_none():
@@ -126,9 +126,9 @@ async def add_sample_registrants():
             session.add(registrant)
             print(f"Added registrant: {registrant_data['name']} ({registrant_data['email']})")
         
-        await session.commit()
+        session.commit()
         print(f"\nSuccessfully added {len(sample_registrants)} sample webinar registrants with photos!")
 
 
 if __name__ == "__main__":
-    asyncio.run(add_sample_registrants()) 
+    add_sample_registrants() 

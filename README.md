@@ -1,16 +1,36 @@
-# FastOpp - Easier AI Web Apps for Students
+# FastOpp - PostgreSQL Edition for LeapCell Deployment
 
 ![FastOpp Logo](docs/images/fastopp_logo.webp)
 
 ## What
 
-FastAPI starter package for students prototyping AI web applications. Pre-built admin
-components give FastAPI functionality comparable to Django
-for AI-first applications.
+**Special PostgreSQL-optimized version of FastOpp** designed for deployment on LeapCell and other PostgreSQL-based platforms. This version uses **synchronous database communication** for improved reliability and compatibility with managed PostgreSQL services.
 
-## Problem Solved
+This is a modified version of the original [FastOpp](https://github.com/Oppkey/FastOpp) project, specifically optimized for:
+- **PostgreSQL databases** (instead of SQLite)
+- **Synchronous database operations** (instead of async)
+- **LeapCell platform deployment** (tested and verified)
+- **Production-ready database connections** with proper SSL and timeout handling
 
-Django and Flask are not designed for optimized async LLM applications.
+## Key Differences from Original FastOpp
+
+### Database Architecture
+- **Original FastOpp**: SQLite with async database operations (`AsyncSession`)
+- **This Version**: PostgreSQL with synchronous database operations (`Session`)
+- **Driver**: Uses `psycopg2-binary` instead of `asyncpg` for better LeapCell compatibility
+- **Connection Management**: Optimized for managed PostgreSQL services with SSL and timeout handling
+
+### Deployment Optimizations
+- **LeapCell Tested**: Successfully deployed and tested on LeapCell platform
+- **Health Checks**: Includes `/kaithheathcheck` endpoint for LeapCell health monitoring
+- **Environment Variables**: Supports LeapCell's environment variable restrictions
+- **File Storage**: Compatible with LeapCell's Object Storage for file persistence
+
+### Performance Trade-offs
+- **Gained**: Better reliability with managed PostgreSQL, fewer connection timeout issues
+- **Gained**: Simplified debugging and maintenance
+- **Gained**: Better compatibility with serverless platforms
+- **Lost**: Some concurrency benefits of async database operations (acceptable for demo/educational use)
 
 ## Overview
 
@@ -86,9 +106,9 @@ quickly, but it is not intended for long-term production use.
 
 ### Should I use PostgreSQL instead of SQLite?
 
-Yes. We use SQLite to get you started because there are less installation dependencies.
-If you use the database in production,
-we recommend switching to PostgreSQL.
+**This version uses PostgreSQL by default** and is optimized for managed PostgreSQL services like LeapCell. The synchronous database operations provide better reliability for serverless deployments.
+
+**For the original FastOpp**: We use SQLite to get you started because there are less installation dependencies. If you use the database in production, we recommend switching to PostgreSQL.
 
 ### Should I use NGINX instead of serving the HTML templates from FastAPI?
 
@@ -210,7 +230,7 @@ Create a `.env` file in your project root:
 
 **Required Environment Variables:**
 
-* `DATABASE_URL`: Database connection string
+* `DATABASE_URL`: PostgreSQL connection string (e.g., `postgresql+psycopg2://user:pass@host:port/db`)
 * `SECRET_KEY`: Secret key for JWT tokens and session management
 * `ENVIRONMENT`: Set to "development" for development mode
 * `OPENROUTER_API_KEY`: API key for OpenRouter (required for AI demo features)
@@ -238,7 +258,7 @@ This will output a line like `SECRET_KEY=...` that you can copy directly into yo
 ```bash
 # Create environment file with secure defaults
 cat > .env << EOF
-DATABASE_URL=sqlite+aiosqlite:///./test.db
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/fastopp_db
 SECRET_KEY=$(uv run python oppman.py secrets | grep SECRET_KEY | cut -d'=' -f2)
 ENVIRONMENT=development
 OPENROUTER_API_KEY=your_openrouter_api_key_here
@@ -249,7 +269,7 @@ EOF
 
 ```bash
 # .env
-DATABASE_URL=sqlite+aiosqlite:///./test.db
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/fastopp_db
 SECRET_KEY=your_generated_secret_key_here
 ENVIRONMENT=development
 OPENROUTER_API_KEY=your_openrouter_api_key_here
@@ -628,6 +648,46 @@ uv run python oppdemo.py restore
 # Check what's different
 uv run python oppdemo.py diff
 ```
+
+## 🚀 LeapCell Deployment
+
+This version has been specifically tested and optimized for deployment on [LeapCell](https://leapcell.io/), a serverless platform that provides:
+
+- **Managed PostgreSQL Database** with automatic SSL configuration
+- **Object Storage** for file persistence
+- **Async Task Processing** for background operations
+- **Health Check Endpoints** for platform monitoring
+
+### LeapCell-Specific Features
+
+- **Health Check Endpoint**: `/kaithheathcheck` for LeapCell platform monitoring
+- **Database URL Conversion**: Automatically converts `postgresql+asyncpg://` to `postgresql+psycopg2://`
+- **SSL Configuration**: Proper SSL handling for managed PostgreSQL
+- **Connection Pooling**: Optimized for serverless environments
+- **File Backup/Restore**: Object Storage integration for file persistence
+
+### Deployment Steps
+
+1. **Create LeapCell Project**: Set up a new project on LeapCell
+2. **Configure Environment Variables**:
+   ```bash
+   DATABASE_URL=postgresql+asyncpg://user:pass@host:port/db  # LeapCell provides this
+   SECRET_KEY=your_secure_secret_key
+   ENVIRONMENT=production
+   S3_ACCESS_KEY=your_leapcell_s3_key
+   S3_SECRET_KEY=your_leapcell_s3_secret
+   ```
+3. **Deploy**: Push your code to LeapCell
+4. **Initialize**: Use the `/async/init-demo` endpoint to set up the database
+
+### Testing
+
+The deployment has been verified to work with:
+- ✅ Database initialization and migrations
+- ✅ User authentication and management
+- ✅ File uploads and Object Storage backup
+- ✅ AI chat functionality
+- ✅ Admin panel access
 
 ## 📚 Documentation
 

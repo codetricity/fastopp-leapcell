@@ -12,7 +12,7 @@ from db import SessionLocal
 from sqlmodel import delete
 
 
-async def clear_and_add_registrants():
+def clear_and_add_registrants():
     """Clear existing registrants and add new ones with photos"""
     from models import WebinarRegistrants  # Import inside function to avoid module-level import error
     
@@ -83,9 +83,9 @@ async def clear_and_add_registrants():
     photos_dir = Path(upload_dir) / "photos"
     photos_dir.mkdir(parents=True, exist_ok=True)
     
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         # Clear existing registrants
-        await session.execute(delete(WebinarRegistrants))
+        session.execute(delete(WebinarRegistrants))
         print("✓ Cleared existing registrants")
         
         for registrant_data in sample_registrants:
@@ -123,9 +123,9 @@ async def clear_and_add_registrants():
             session.add(registrant)
             print(f"Added registrant: {registrant_data['name']} ({registrant_data['email']})")
         
-        await session.commit()
+        session.commit()
         print(f"\nSuccessfully added {len(sample_registrants)} sample webinar registrants with photos!")
 
 
 if __name__ == "__main__":
-    asyncio.run(clear_and_add_registrants()) 
+    clear_and_add_registrants() 

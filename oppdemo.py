@@ -118,17 +118,17 @@ async def run_download_photos():
     print("✅ Sample photos download complete")
 
 
-async def run_registrants():
+def run_registrants():
     """Add sample webinar registrants with photos"""
     print("🔄 Adding sample webinar registrants...")
-    await add_sample_registrants()
+    add_sample_registrants()
     print("✅ Sample webinar registrants creation complete")
 
 
-async def run_clear_registrants():
+def run_clear_registrants():
     """Clear and add fresh webinar registrants with photos"""
     print("🔄 Clearing and adding fresh webinar registrants...")
-    await clear_and_add_registrants()
+    clear_and_add_registrants()
     print("✅ Fresh webinar registrants creation complete")
 
 
@@ -158,7 +158,7 @@ async def run_list_users():
     await list_users()
 
 
-def run_full_init():
+async def run_full_init():
     """Run complete initialization: init + superuser + users + products + webinars + registrants"""
     print("🚀 Running full initialization...")
     ensure_upload_dirs()
@@ -175,9 +175,9 @@ def run_full_init():
             run_users()
             run_products()
             run_webinars()
-            asyncio.run(run_download_photos())
-            asyncio.run(run_registrants())
-            asyncio.run(run_clear_registrants())
+            await run_download_photos()
+            run_registrants()
+            run_clear_registrants()
             
             print("✅ Full initialization complete!")
             print("\n📋 Summary:")
@@ -1318,26 +1318,26 @@ Examples:
     elif args.command in ["init", "db", "superuser", "users", "products", "webinars",
                           "download_photos", "registrants", "clear_registrants", "check_users",
                           "test_auth", "change_password", "list_users"]:
-        # Run async commands
+        # Run commands (mix of sync and async)
         async def run_command():
             if args.command == "init":
                 await run_full_init()
             elif args.command == "db":
-                await run_init()
+                run_init()
             elif args.command == "superuser":
-                await run_superuser()
+                run_superuser()
             elif args.command == "users":
-                await run_users()
+                run_users()
             elif args.command == "products":
-                await run_products()
+                run_products()
             elif args.command == "webinars":
-                await run_webinars()
+                run_webinars()
             elif args.command == "download_photos":
                 await run_download_photos()
             elif args.command == "registrants":
-                await run_registrants()
+                run_registrants()
             elif args.command == "clear_registrants":
-                await run_clear_registrants()
+                run_clear_registrants()
             elif args.command == "check_users":
                 await run_check_users()
             elif args.command == "test_auth":
