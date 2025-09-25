@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from admin.setup import setup_admin
@@ -201,30 +201,30 @@ async def debug_database():
 
 
 @app.get("/debug/database-data")
-async def debug_database_data(session: AsyncSession = Depends(get_db_session)):
+def debug_database_data(session: Session = Depends(get_db_session)):
     """Debug database data - check if tables exist and have data"""
     try:
         from sqlmodel import text
         
         # Check if tables exist
-        tables_result = await session.execute(text("SELECT name FROM sqlite_master WHERE type='table';"))
+        tables_result = session.execute(text("SELECT name FROM sqlite_master WHERE type='table';"))
         tables = [row[0] for row in tables_result.fetchall()]
-        
+
         # Count records in each table
         table_counts = {}
         for table in tables:
             try:
-                count_result = await session.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                count_result = session.execute(text(f"SELECT COUNT(*) FROM {table}"))
                 count = count_result.scalar()
                 table_counts[table] = count
             except Exception as e:
                 table_counts[table] = f"Error: {str(e)}"
-        
+
         # Check users specifically
         users_data = []
         if "users" in tables:
             try:
-                users_result = await session.execute(text("SELECT email, is_active, is_staff FROM users LIMIT 5"))
+                users_result = session.execute(text("SELECT email, is_active, is_staff FROM users LIMIT 5"))
                 users_data = [dict(row) for row in users_result.fetchall()]
             except Exception as e:
                 users_data = f"Error: {str(e)}"
@@ -253,19 +253,19 @@ async def debug_simple():
 
 
 @app.get("/debug/connection")
-async def debug_connection():
+def debug_connection():
     """Test database connection with detailed diagnostics"""
     try:
-        from db import async_engine
+        from db import engine
         from sqlmodel import text
         
         # Test basic connection
-        async with async_engine.begin() as conn:
-            result = await conn.execute(text("SELECT 1 as test"))
+        with engine.begin() as conn:
+            result = conn.execute(text("SELECT 1 as test"))
             test_value = result.scalar()
             
         # Test connection pool status
-        pool = async_engine.pool
+        pool = engine.pool
         pool_status = {
             "size": pool.size(),
             "checked_in": pool.checkedin(),
