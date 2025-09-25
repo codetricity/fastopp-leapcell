@@ -7,7 +7,7 @@ from typing import Optional
 from uuid import UUID
 import uuid
 from sqlmodel import select
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import WebinarRegistrants
 
 
@@ -15,10 +15,10 @@ class WebinarService:
     """Service for webinar registrant operations"""
     
     @staticmethod
-    async def get_all_registrants():
+    def get_all_registrants():
         """Get all webinar registrants with their photos"""
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(select(WebinarRegistrants))
+        with SessionLocal() as session:
+            result = session.execute(select(WebinarRegistrants))
             registrants = result.scalars().all()
             
             return [
@@ -38,10 +38,10 @@ class WebinarService:
             ]
     
     @staticmethod
-    async def get_webinar_attendees():
+    def get_webinar_attendees():
         """Get webinar attendees for the marketing demo page"""
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(select(WebinarRegistrants))
+        with SessionLocal() as session:
+            result = session.execute(select(WebinarRegistrants))
             registrants = result.scalars().all()
             
             return [
@@ -62,7 +62,7 @@ class WebinarService:
             ]
     
     @staticmethod
-    async def upload_photo(registrant_id: str, photo_content: bytes, filename: str) -> tuple[bool, str, Optional[str]]:
+    def upload_photo(registrant_id: str, photo_content: bytes, filename: str) -> tuple[bool, str, Optional[str]]:
         """
         Upload a photo for a webinar registrant
         
@@ -93,8 +93,8 @@ class WebinarService:
                     pass
                 return False, "Invalid registrant ID", None
             
-            async with AsyncSessionLocal() as session:
-                result = await session.execute(
+            with SessionLocal() as session:
+                result = session.execute(
                     select(WebinarRegistrants).where(WebinarRegistrants.id == registrant_uuid)
                 )
                 registrant = result.scalar_one_or_none()
@@ -108,7 +108,7 @@ class WebinarService:
                     return False, "Registrant not found", None
                 
                 registrant.photo_url = photo_url
-                await session.commit()
+                session.commit()
             
             return True, "Photo uploaded successfully!", photo_url
             
@@ -116,7 +116,7 @@ class WebinarService:
             return False, f"Failed to save file: {str(e)}", None
     
     @staticmethod
-    async def update_notes(registrant_id: str, notes: str) -> tuple[bool, str]:
+    def update_notes(registrant_id: str, notes: str) -> tuple[bool, str]:
         """
         Update notes for a webinar registrant
         
@@ -130,8 +130,8 @@ class WebinarService:
             except ValueError:
                 return False, "Invalid registrant ID"
             
-            async with AsyncSessionLocal() as session:
-                result = await session.execute(
+            with SessionLocal() as session:
+                result = session.execute(
                     select(WebinarRegistrants).where(WebinarRegistrants.id == registrant_uuid)
                 )
                 registrant = result.scalar_one_or_none()
@@ -141,7 +141,7 @@ class WebinarService:
                 
                 # Update database
                 registrant.notes = notes
-                await session.commit()
+                session.commit()
             
             return True, "Notes updated successfully!"
             
@@ -149,7 +149,7 @@ class WebinarService:
             return False, f"Error updating notes: {str(e)}"
     
     @staticmethod
-    async def delete_photo(registrant_id: str) -> tuple[bool, str]:
+    def delete_photo(registrant_id: str) -> tuple[bool, str]:
         """
         Delete a photo for a webinar registrant
         
@@ -163,8 +163,8 @@ class WebinarService:
             except ValueError:
                 return False, "Invalid registrant ID"
             
-            async with AsyncSessionLocal() as session:
-                result = await session.execute(
+            with SessionLocal() as session:
+                result = session.execute(
                     select(WebinarRegistrants).where(WebinarRegistrants.id == registrant_uuid)
                 )
                 registrant = result.scalar_one_or_none()
@@ -186,7 +186,7 @@ class WebinarService:
                 
                 # Update database
                 registrant.photo_url = None
-                await session.commit()
+                session.commit()
             
             return True, "Photo deleted successfully!"
             

@@ -1,11 +1,11 @@
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from .database import get_db_session
 from .config import Settings, get_settings
 
 
 def get_product_service(
-    session: AsyncSession = Depends(get_db_session),
+    session: Session = Depends(get_db_session),
     settings: Settings = Depends(get_settings)
 ):
     """Dependency to get ProductService instance - PROOF OF CONCEPT"""

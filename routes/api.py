@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/products")
 async def get_products(product_service = Depends(get_product_service)):
     """API endpoint to fetch product data for the dashboard"""
-    data = await product_service.get_products_with_stats()
+    data = product_service.get_products_with_stats()
     return JSONResponse(data)
 
 
@@ -22,7 +22,7 @@ async def get_registrants(current_user: User = Depends(get_current_staff_or_admi
     """Get all webinar registrants with their photos"""
     from services.webinar_service import WebinarService
     
-    registrants = await WebinarService.get_all_registrants()
+    registrants = WebinarService.get_all_registrants()
     return JSONResponse({"registrants": registrants})
 
 
@@ -32,7 +32,7 @@ async def get_webinar_attendees(request: Request):
     from services.webinar_service import WebinarService
     from fastapi.templating import Jinja2Templates
     
-    attendees = await WebinarService.get_webinar_attendees()
+    attendees = WebinarService.get_webinar_attendees()
     
     # Check if this is an HTMX request
     templates = Jinja2Templates(directory="templates")

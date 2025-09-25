@@ -47,7 +47,7 @@ async def login_form(
         })
     
     # Use injected database session
-    result = await session.execute(
+    result = session.execute(
         select(User).where(User.email == username)
     )
     user = result.scalar_one_or_none()

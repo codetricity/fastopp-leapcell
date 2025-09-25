@@ -40,7 +40,7 @@ async def upload_photo(
     
     # Use service to handle upload
     from services.webinar_service import WebinarService
-    success, message, _ = await WebinarService.upload_photo(
+    success, message, _ = WebinarService.upload_photo(
         registrant_id, content, photo.filename or "photo.jpg"
     )
     
@@ -65,7 +65,7 @@ async def update_notes(
     """Update notes for a webinar registrant"""
     from services.webinar_service import WebinarService
     
-    success, message = await WebinarService.update_notes(registrant_id, notes)
+    success, message = WebinarService.update_notes(registrant_id, notes)
     
     if success:
         return HTMLResponse(
@@ -85,7 +85,7 @@ async def delete_photo(registrant_id: str):
     """Delete a photo for a webinar registrant"""
     from services.webinar_service import WebinarService
     
-    success, message = await WebinarService.delete_photo(registrant_id)
+    success, message = WebinarService.delete_photo(registrant_id)
     
     if success:
         return HTMLResponse(

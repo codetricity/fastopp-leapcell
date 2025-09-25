@@ -3,7 +3,7 @@ Product service for handling product-related business logic
 """
 from sqlmodel import select, func
 from sqlalchemy import case
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from models import Product
 from dependencies.config import Settings
 
@@ -11,25 +11,25 @@ from dependencies.config import Settings
 class ProductService:
     """Service for product-related operations"""
     
-    def __init__(self, session: AsyncSession, settings: Settings):
+    def __init__(self, session: Session, settings: Settings):
         self.session = session
         self.settings = settings
     
-    async def get_products_with_stats(self):
+    def get_products_with_stats(self):
         """Get all products with statistics"""
         # Get all products
-        result = await self.session.execute(select(Product))
+        result = self.session.execute(select(Product))
         products = result.scalars().all()
 
         # Get category statistics
-        category_stats = await self.session.execute(
+        category_stats = self.session.execute(
             select(Product.category, func.count(Product.id).label('count'))  # type: ignore
             .group_by(Product.category)
         )
         categories = category_stats.all()
 
         # Get price statistics
-        price_stats = await self.session.execute(
+        price_stats = self.session.execute(
             select(
                 func.avg(Product.price).label('avg_price'),
                 func.min(Product.price).label('min_price'),
@@ -40,7 +40,7 @@ class ProductService:
         stats = price_stats.first()
 
         # Get stock statistics
-        stock_stats = await self.session.execute(
+        stock_stats = self.session.execute(
             select(
                 func.count(Product.id).label('total'),  # type: ignore
                 func.sum(case(
