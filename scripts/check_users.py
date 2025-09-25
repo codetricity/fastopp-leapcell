@@ -4,7 +4,7 @@ Script to check existing users and their permissions
 """
 
 import asyncio
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 from sqlmodel import select
 

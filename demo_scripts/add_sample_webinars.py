@@ -3,7 +3,7 @@
 # =========================
 import asyncio
 from datetime import datetime, timedelta
-from db import AsyncSessionLocal
+from db import SessionLocal
 from sqlmodel import select
 
 

@@ -2,7 +2,7 @@
 # add_sample_products.py - Add sample products to database
 # =========================
 import asyncio
-from db import AsyncSessionLocal
+from db import SessionLocal
 
 
 async def add_sample_products():

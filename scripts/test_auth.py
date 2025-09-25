@@ -5,7 +5,7 @@ Script to test the authentication system
 
 import asyncio
 from auth.core import create_user_token
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 from sqlmodel import select
 

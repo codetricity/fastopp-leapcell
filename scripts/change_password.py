@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlmodel import select
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 from fastapi_users.password import PasswordHelper
 

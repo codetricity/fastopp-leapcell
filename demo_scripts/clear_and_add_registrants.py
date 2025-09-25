@@ -8,7 +8,7 @@ import uuid
 import shutil
 from pathlib import Path
 from datetime import datetime, timezone
-from db import AsyncSessionLocal
+from db import SessionLocal
 from sqlmodel import delete
 
 

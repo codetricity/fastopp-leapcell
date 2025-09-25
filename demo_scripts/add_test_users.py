@@ -2,7 +2,7 @@
 # add_test_users.py - Add test users to database
 # =========================
 import asyncio
-from db import AsyncSessionLocal
+from db import SessionLocal
 from models import User
 from sqlmodel import select
 from fastapi_users.password import PasswordHelper
