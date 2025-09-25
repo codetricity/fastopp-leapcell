@@ -9,11 +9,6 @@ load_dotenv()
 # Get database URL from environment (defaults to SQLite for development)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
-# For PostgreSQL, add SSL and timeout parameters to the URL
-if "postgresql" in DATABASE_URL and "?" not in DATABASE_URL:
-    # Add SSL and timeout parameters to the connection URL
-    DATABASE_URL += "?sslmode=require&connect_timeout=30&command_timeout=30"
-
 # Debug: Print the database URL (without password for security)
 print(f"🔍 Database URL: {DATABASE_URL}")
 if "postgresql" in DATABASE_URL:
@@ -22,8 +17,17 @@ if "postgresql" in DATABASE_URL:
     masked_url = re.sub(r':[^@]+@', ':***@', DATABASE_URL)
     print(f"🔍 Masked URL: {masked_url}")
 
-# Create async engine with minimal configuration
+# Create async engine with SSL configuration
 connect_args = {}
+if "postgresql" in DATABASE_URL:
+    # For PostgreSQL, use asyncpg-specific SSL and timeout parameters
+    connect_args = {
+        "ssl": "require",  # Use 'ssl' instead of 'sslmode'
+        "command_timeout": 30,
+        "server_settings": {
+            "application_name": "fastopp_leapcell"
+        }
+    }
 
 async_engine = create_async_engine(
     DATABASE_URL,
