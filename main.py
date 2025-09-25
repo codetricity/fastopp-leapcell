@@ -107,6 +107,12 @@ async def health_check():
     return {"status": "healthy", "message": "FastOpp Demo app is running"}
 
 
+@app.get("/kaithheathcheck")
+async def leapcell_health_check():
+    """LeapCell health check endpoint"""
+    return {"status": "healthy", "message": "FastOpp Demo app is running"}
+
+
 @app.post("/async/init-demo")
 async def init_demo_async():
     """Initialize demo data using Leapcell's async task system"""
