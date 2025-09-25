@@ -22,7 +22,6 @@ connect_args = {}
 if "postgresql" in DATABASE_URL:
     # For PostgreSQL, handle SSL mode properly with aggressive timeout settings
     connect_args = {
-        "sslmode": "require",
         "server_settings": {
             "application_name": "fastopp_leapcell",
             "statement_timeout": "30000",  # 30 seconds

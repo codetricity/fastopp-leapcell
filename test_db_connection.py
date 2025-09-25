@@ -30,7 +30,6 @@ async def test_connection():
         connect_args = {}
         if "postgresql" in database_url:
             connect_args = {
-                "sslmode": "require",
                 "server_settings": {
                     "application_name": "fastopp_connection_test",
                     "statement_timeout": "30000",
