@@ -163,26 +163,44 @@ async def run_full_init():
     print("🚀 Running full initialization...")
     ensure_upload_dirs()
     
-    await run_init()
-    await run_superuser()
-    await run_users()
-    await run_products()
-    await run_webinars()
-    await run_download_photos()
-    await run_registrants()
-    await run_clear_registrants()
+    # Retry logic for database operations
+    max_retries = 3
+    retry_delay = 5  # seconds
     
-    print("✅ Full initialization complete!")
-    print("\n📋 Summary:")
-    print("- Database initialized")
-    print("- Superuser created: admin@example.com / admin123")
-    print("- Test users added (password: test123)")
-    print("- Sample products added")
-    print("- Sample webinars added")
-    print("- Sample photos downloaded")
-    print("- Webinar registrants added with photos")
-    print("\n🌐 Ready to start the application with: uv run uvicorn main:app --reload")
-    print("🔐 Login to webinar registrants: http://localhost:8000/webinar-registrants")
+    for attempt in range(max_retries):
+        try:
+            print(f"🔄 Initializing database... (attempt {attempt + 1}/{max_retries})")
+            await run_init()
+            await run_superuser()
+            await run_users()
+            await run_products()
+            await run_webinars()
+            await run_download_photos()
+            await run_registrants()
+            await run_clear_registrants()
+            
+            print("✅ Full initialization complete!")
+            print("\n📋 Summary:")
+            print("- Database initialized")
+            print("- Superuser created: admin@example.com / admin123")
+            print("- Test users added (password: test123)")
+            print("- Sample products added")
+            print("- Sample webinars added")
+            print("- Sample photos downloaded")
+            print("- Webinar registrants added with photos")
+            print("\n🌐 Ready to start the application with: uv run uvicorn main:app --reload")
+            print("🔐 Login to webinar registrants: http://localhost:8000/webinar-registrants")
+            return  # Success, exit retry loop
+            
+        except Exception as e:
+            print(f"❌ Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                print(f"⏳ Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print("❌ All retry attempts failed")
+                raise e
 
 
 def save_demo_files():

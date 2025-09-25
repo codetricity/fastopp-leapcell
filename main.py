@@ -252,6 +252,46 @@ async def debug_simple():
     }
 
 
+@app.get("/debug/connection")
+async def debug_connection():
+    """Test database connection with detailed diagnostics"""
+    try:
+        from db import async_engine
+        from sqlmodel import text
+        
+        # Test basic connection
+        async with async_engine.begin() as conn:
+            result = await conn.execute(text("SELECT 1 as test"))
+            test_value = result.scalar()
+            
+        # Test connection pool status
+        pool = async_engine.pool
+        pool_status = {
+            "size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "invalid": pool.invalid()
+        }
+        
+        return {
+            "status": "success",
+            "connection_test": test_value,
+            "pool_status": pool_status,
+            "database_url": os.getenv("DATABASE_URL", "not_set")[:50] + "...",
+            "message": "Database connection successful"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "database_url": os.getenv("DATABASE_URL", "not_set")[:50] + "...",
+            "message": "Database connection failed"
+        }
+
+
 @app.post("/admin/backup-files")
 async def backup_files():
     """Backup uploaded files to LeapCell Object Storage"""
