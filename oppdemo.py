@@ -75,10 +75,10 @@ def create_backup_path(original_file: Path, operation: str) -> Path:
 
 
 # Demo Data Initialization Functions
-async def run_init():
+def run_init():
     """Initialize a new database"""
     print("🔄 Initializing database...")
-    await init_db()
+    init_db()
     print("✅ Database initialization complete")
 
 
@@ -158,7 +158,7 @@ async def run_list_users():
     await list_users()
 
 
-async def run_full_init():
+def run_full_init():
     """Run complete initialization: init + superuser + users + products + webinars + registrants"""
     print("🚀 Running full initialization...")
     ensure_upload_dirs()
@@ -170,7 +170,7 @@ async def run_full_init():
     for attempt in range(max_retries):
         try:
             print(f"🔄 Initializing database... (attempt {attempt + 1}/{max_retries})")
-            await run_init()
+            run_init()
             await run_superuser()
             await run_users()
             await run_products()
@@ -196,7 +196,8 @@ async def run_full_init():
             print(f"❌ Attempt {attempt + 1} failed: {e}")
             if attempt < max_retries - 1:
                 print(f"⏳ Retrying in {retry_delay} seconds...")
-                await asyncio.sleep(retry_delay)
+                import time
+                time.sleep(retry_delay)
                 retry_delay *= 2  # Exponential backoff
             else:
                 print("❌ All retry attempts failed")

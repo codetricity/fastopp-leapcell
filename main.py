@@ -114,18 +114,18 @@ async def leapcell_health_check():
 
 
 @app.post("/async/init-demo")
-async def init_demo_async():
+def init_demo_async():
     """Initialize demo data using Leapcell's async task system"""
     try:
         print("🚀 Starting demo initialization...")
-        
+
         # Import and run the initialization
         from oppdemo import run_full_init
-        await run_full_init()
-        
+        run_full_init()
+
         print("✅ Demo initialization complete!")
         return {
-            "status": "success", 
+            "status": "success",
             "message": "Demo initialization completed successfully",
             "details": {
                 "database_initialized": True,
@@ -137,7 +137,7 @@ async def init_demo_async():
     except Exception as e:
         print(f"❌ Demo initialization failed: {e}")
         return {
-            "status": "error", 
+            "status": "error",
             "message": f"Demo initialization failed: {str(e)}",
             "error_type": type(e).__name__
         }
