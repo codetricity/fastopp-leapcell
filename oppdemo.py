@@ -89,10 +89,10 @@ def run_superuser():
     print("✅ Superuser creation complete")
 
 
-async def run_users():
+def run_users():
     """Add test users"""
     print("🔄 Adding test users...")
-    await add_test_users()
+    add_test_users()
     print("✅ Test users creation complete")
 
 
@@ -172,7 +172,7 @@ def run_full_init():
             print(f"🔄 Initializing database... (attempt {attempt + 1}/{max_retries})")
             run_init()
             run_superuser()
-            asyncio.run(run_users())
+            run_users()
             asyncio.run(run_products())
             asyncio.run(run_webinars())
             asyncio.run(run_download_photos())

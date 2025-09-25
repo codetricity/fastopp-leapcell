@@ -8,9 +8,9 @@ from sqlmodel import select
 from fastapi_users.password import PasswordHelper
 
 
-async def add_test_users():
+def add_test_users():
     """Add test users to the database"""
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         password_helper = PasswordHelper()
         password = "test123"
         hashed_pw = password_helper.hash(password)
@@ -77,14 +77,14 @@ async def add_test_users():
         
         for user_data in test_users:
             # Skip if user already exists (idempotent)
-            result = await session.execute(select(User).where(User.email == user_data["email"]))
+            result = session.execute(select(User).where(User.email == user_data["email"]))
             if result.scalar_one_or_none():
                 print(f"ℹ️  User already exists, skipping: {user_data['email']}")
                 continue
             user = User(**user_data)
             session.add(user)
         
-        await session.commit()
+        session.commit()
         print("✅ Added test users to database (skipping existing users)")
         print("Test users:")
         print("- admin@example.com (superuser, admin) - created by superuser script")
