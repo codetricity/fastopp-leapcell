@@ -193,6 +193,60 @@ async def debug_database():
     }
 
 
+@app.get("/debug/database-data")
+async def debug_database_data():
+    """Debug database data - check if tables exist and have data"""
+    try:
+        from dependencies.database import get_db_session
+        from sqlmodel import text
+        
+        async with get_db_session() as session:
+            # Check if tables exist
+            tables_result = await session.execute(text("SELECT name FROM sqlite_master WHERE type='table';"))
+            tables = [row[0] for row in tables_result.fetchall()]
+            
+            # Count records in each table
+            table_counts = {}
+            for table in tables:
+                try:
+                    count_result = await session.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                    count = count_result.scalar()
+                    table_counts[table] = count
+                except Exception as e:
+                    table_counts[table] = f"Error: {str(e)}"
+            
+            # Check users specifically
+            users_data = []
+            if "users" in tables:
+                try:
+                    users_result = await session.execute(text("SELECT email, is_active, is_staff FROM users LIMIT 5"))
+                    users_data = [dict(row) for row in users_result.fetchall()]
+                except Exception as e:
+                    users_data = f"Error: {str(e)}"
+            
+            return {
+                "tables_found": tables,
+                "table_counts": table_counts,
+                "sample_users": users_data,
+                "total_tables": len(tables)
+            }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
+@app.get("/debug/simple")
+async def debug_simple():
+    """Simple debug endpoint to test if the app is working"""
+    return {
+        "status": "working",
+        "message": "Debug endpoint is accessible",
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle HTTP exceptions and redirect to login if authentication fails"""
