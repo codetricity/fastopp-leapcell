@@ -246,6 +246,126 @@ async def debug_simple():
     }
 
 
+@app.post("/admin/backup-files")
+async def backup_files():
+    """Backup uploaded files to LeapCell Object Storage"""
+    try:
+        import boto3
+        from pathlib import Path
+        
+        # Get upload directory
+        settings = get_settings()
+        upload_dir = Path(settings.upload_dir)
+        
+        if not upload_dir.exists():
+            return {"status": "error", "message": "Upload directory does not exist"}
+        
+        # Initialize S3 client
+        s3 = boto3.client(
+            "s3",
+            region_name="us-east-1",
+            endpoint_url="https://objstorage.leapcell.io",
+            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "cf0742f423bd4c3f9932c54cb97315fb"),
+            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "******")
+        )
+        
+        bucket_name = "os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo"
+        files_backed_up = 0
+        
+        # Backup all files in upload directory
+        for file_path in upload_dir.rglob("*"):
+            if file_path.is_file():
+                # Create S3 key (relative path from upload_dir)
+                relative_path = file_path.relative_to(upload_dir)
+                s3_key = f"uploads/{relative_path}"
+                
+                # Upload file to Object Storage
+                with open(file_path, "rb") as f:
+                    s3.put_object(
+                        Bucket=bucket_name,
+                        Key=str(s3_key),
+                        Body=f
+                    )
+                files_backed_up += 1
+        
+        return {
+            "status": "success",
+            "message": f"Backed up {files_backed_up} files to Object Storage",
+            "bucket": bucket_name,
+            "files_count": files_backed_up
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Backup failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
+@app.post("/admin/restore-files")
+async def restore_files():
+    """Restore uploaded files from LeapCell Object Storage"""
+    try:
+        import boto3
+        from pathlib import Path
+        
+        # Get upload directory
+        settings = get_settings()
+        upload_dir = Path(settings.upload_dir)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize S3 client
+        s3 = boto3.client(
+            "s3",
+            region_name="us-east-1",
+            endpoint_url="https://objstorage.leapcell.io",
+            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "cf0742f423bd4c3f9932c54cb97315fb"),
+            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "******")
+        )
+        
+        bucket_name = "os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo"
+        files_restored = 0
+        
+        # List objects in Object Storage
+        response = s3.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix="uploads/"
+        )
+        
+        for obj in response.get("Contents", []):
+            s3_key = obj["Key"]
+            if s3_key.endswith("/"):
+                continue  # Skip directories
+            
+            # Download file from Object Storage
+            file_response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+            
+            # Create local file path
+            relative_path = s3_key.replace("uploads/", "")
+            local_file_path = upload_dir / relative_path
+            local_file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Save file locally
+            with open(local_file_path, "wb") as f:
+                f.write(file_response["Body"].read())
+            
+            files_restored += 1
+        
+        return {
+            "status": "success",
+            "message": f"Restored {files_restored} files from Object Storage",
+            "files_count": files_restored
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Restore failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle HTTP exceptions and redirect to login if authentication fails"""
