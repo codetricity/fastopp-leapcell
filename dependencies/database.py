@@ -6,8 +6,16 @@ from .config import Settings, get_settings
 
 def create_database_engine(settings: Settings = Depends(get_settings)):
     """Create database engine from settings"""
+    # Apply URL conversion for PostgreSQL (asyncpg -> psycopg2)
+    database_url = settings.database_url
+    if "postgresql+asyncpg" in database_url:
+        database_url = database_url.replace("postgresql+asyncpg", "postgresql+psycopg2")
+        # Add SSL mode as URL parameter (psycopg2 supports this)
+        if "?" not in database_url:
+            database_url += "?sslmode=require"
+    
     return create_engine(
-        settings.database_url,
+        database_url,
         echo=settings.environment == "development",
         future=True
     )
