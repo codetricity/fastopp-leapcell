@@ -76,13 +76,15 @@ def setup_dependencies(app: FastAPI):
 # Setup dependencies immediately
 setup_dependencies(app)
 
-# Mount uploads directory based on environment (MUST come before /static mount)
-if settings.upload_dir != "static/uploads":
-    # In production environments, mount the uploads directory separately
-    app.mount("/static/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-# Mount static files (MUST come after /static/uploads to avoid conflicts)
+# Mount static files first (for general static assets)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Note: We don't mount /static/uploads as a static directory in production
+# because we have a custom endpoint that handles Object Storage fallback
+if settings.upload_dir == "static/uploads":
+    print(f"🔧 Development mode: Using default static/uploads")
+else:
+    print(f"🔧 Production mode: Using custom photo serving with Object Storage fallback")
 
 templates = Jinja2Templates(directory="templates")
 security = HTTPBasic()
@@ -249,6 +251,121 @@ async def debug_simple():
         "message": "Debug endpoint is accessible",
         "timestamp": "2024-01-01T00:00:00Z"
     }
+
+
+@app.get("/debug/settings")
+async def debug_settings():
+    """Debug endpoint to check current settings and upload directory configuration"""
+    from pathlib import Path
+    
+    # Check if upload directory exists
+    upload_dir = Path(settings.upload_dir)
+    upload_dir_exists = upload_dir.exists()
+    photos_dir_exists = (upload_dir / "photos").exists()
+    
+    # Count files in photos directory
+    photo_count = 0
+    if photos_dir_exists:
+        try:
+            photo_count = len(list((upload_dir / "photos").glob("*")))
+        except Exception:
+            photo_count = "error"
+    
+    # List some sample files
+    sample_files = []
+    if photos_dir_exists:
+        try:
+            sample_files = [f.name for f in (upload_dir / "photos").glob("*")[:5]]
+        except Exception:
+            sample_files = ["error_reading_files"]
+    
+    return {
+        "upload_dir": settings.upload_dir,
+        "upload_dir_exists": upload_dir_exists,
+        "photos_dir_exists": photos_dir_exists,
+        "photo_count": photo_count,
+        "sample_files": sample_files,
+        "environment": settings.environment,
+        "static_mounts": {
+            "general_static": "/static",
+            "uploads_mounted_separately": settings.upload_dir != "static/uploads"
+        },
+        "expected_photo_urls": "/static/uploads/photos/",
+        "actual_photo_path": str(upload_dir / "photos") if upload_dir_exists else "not_found",
+        "test_urls": [
+            f"/static/uploads/photos/{f}" for f in sample_files[:3]
+        ]
+    }
+
+
+@app.get("/debug/test-image/{filename}")
+async def debug_test_image(filename: str):
+    """Test if a specific image file can be served"""
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    
+    upload_dir = Path(settings.upload_dir)
+    photo_path = upload_dir / "photos" / filename
+    
+    if photo_path.exists():
+        return FileResponse(photo_path)
+    else:
+        return {
+            "error": "File not found",
+            "expected_path": str(photo_path),
+            "upload_dir": str(upload_dir),
+            "filename": filename
+        }
+
+
+@app.get("/static/uploads/photos/{filename}")
+async def serve_photo_with_fallback(filename: str):
+    """Serve photo with fallback to Object Storage if local file doesn't exist"""
+    from pathlib import Path
+    from fastapi.responses import FileResponse, RedirectResponse
+    import boto3
+    import os
+    
+    # First, try to serve from local storage
+    upload_dir = Path(settings.upload_dir)
+    photo_path = upload_dir / "photos" / filename
+    
+    if photo_path.exists():
+        return FileResponse(photo_path)
+    
+    # If local file doesn't exist, try to serve from Object Storage
+    s3_access_key = os.getenv("S3_ACCESS_KEY")
+    s3_secret_key = os.getenv("S3_SECRET_KEY")
+    s3_bucket = os.getenv("S3_BUCKET")
+    
+    if s3_access_key and s3_secret_key and s3_bucket:
+        try:
+            s3 = boto3.client(
+                "s3",
+                region_name=os.getenv("S3_REGION", "us-east-1"),
+                endpoint_url=os.getenv("S3_ENDPOINT_URL", "https://objstorage.leapcell.io"),
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key
+            )
+            
+            # Try to get the object from S3
+            s3_key = f"uploads/photos/{filename}"
+            response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
+            
+            # Return the image data
+            from fastapi.responses import Response
+            return Response(
+                content=response["Body"].read(),
+                media_type="image/jpeg",
+                headers={"Cache-Control": "public, max-age=3600"}
+            )
+            
+        except Exception as e:
+            # If S3 fails, return a 404
+            return {"error": f"File not found in local storage or Object Storage: {str(e)}"}
+    
+    # If no S3 credentials, return 404
+    return {"error": "File not found and Object Storage not configured"}
 
 
 @app.get("/debug/connection")
