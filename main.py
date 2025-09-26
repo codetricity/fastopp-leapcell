@@ -455,9 +455,11 @@ async def change_password_submit(request: Request):
 
 @app.post("/async/init-demo")
 def init_demo_async():
-    """Initialize demo data using CDN-based images (no file storage issues)"""
+    """Initialize demo data using CDN-based images and copy sample photos to photos directory"""
     try:
         import uuid
+        import shutil
+        from pathlib import Path
         from datetime import datetime, timezone
         from models import WebinarRegistrants
         from sqlmodel import select, delete
@@ -467,7 +469,31 @@ def init_demo_async():
         # Get the session factory from app state
         session_factory = app.state.session_factory
         
-        # Sample registrants data with CDN URLs
+        # Copy sample photos to photos directory
+        print("📸 Copying sample photos to photos directory...")
+        upload_dir = Path(settings.upload_dir)
+        sample_photos_dir = upload_dir / "sample_photos"
+        photos_dir = upload_dir / "photos"
+        photos_dir.mkdir(parents=True, exist_ok=True)
+        
+        copied_count = 0
+        if sample_photos_dir.exists():
+            for sample_file in sample_photos_dir.glob("*.jpg"):
+                # Generate unique filename to avoid conflicts
+                unique_filename = f"{uuid.uuid4()}_{sample_file.name}"
+                dest_path = photos_dir / unique_filename
+                
+                # Copy the file
+                shutil.copy2(sample_file, dest_path)
+                copied_count += 1
+                print(f"  ✅ Copied {sample_file.name} to {unique_filename}")
+        
+        print(f"📸 Copied {copied_count} sample photos to photos directory")
+        
+        # Get list of copied photos for registrants
+        copied_photos = list(photos_dir.glob("*.jpg"))
+        
+        # Sample registrants data with local photo URLs
         sample_registrants = [
             {
                 "name": "Sarah Johnson",
@@ -477,7 +503,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Interested in AI implementation strategies",
-                "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
+                "photo_url": f"/static/uploads/photos/{copied_photos[0].name}" if copied_photos else None
             },
             {
                 "name": "Michael Chen",
@@ -487,7 +513,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Looking for AI tools for data analysis",
-                "photo_url": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face"
+                "photo_url": f"/static/uploads/photos/{copied_photos[1].name}" if len(copied_photos) > 1 else None
             },
             {
                 "name": "Emily Rodriguez",
@@ -497,7 +523,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed", 
                 "notes": "Want to learn about AI automation",
-                "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face"
+                "photo_url": f"/static/uploads/photos/{copied_photos[2].name}" if len(copied_photos) > 2 else None
             },
             {
                 "name": "David Kim",
@@ -507,7 +533,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Exploring AI for customer service",
-                "photo_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face"
+                "photo_url": f"/static/uploads/photos/{copied_photos[3].name}" if len(copied_photos) > 3 else None
             }
         ]
         
@@ -540,10 +566,11 @@ def init_demo_async():
         print("✅ Demo initialization complete!")
         return {
             "status": "success",
-            "message": "Demo initialization completed successfully with CDN images",
+            "message": "Demo initialization completed successfully with local photos",
             "details": {
                 "registrants_created": created_count,
-                "image_source": "CDN (no file storage issues)",
+                "photos_copied": copied_count,
+                "image_source": "Local photos (copied from sample_photos to photos)",
                 "persistent": True
             }
         }
@@ -1199,14 +1226,14 @@ async def test_restore_single():
         )
         
         # Try to download the first sample photo
-        s3_key = "sample_photos%2Fsample_photo_1.jpg"
+        s3_key = "photos%2Fsample_photo_1.jpg"
         
         try:
             # Download file from Object Storage
             file_response = s3.get_object(Bucket=settings.s3_bucket, Key=s3_key)
             
             # Create local file path
-            relative_path = s3_key.replace("sample_photos%2F", "sample_photos/")
+            relative_path = s3_key.replace("photos%2F", "photos/")
             local_file_path = upload_dir / relative_path
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
             
@@ -2013,8 +2040,8 @@ async def restore_files():
             if s3_key.endswith("/"):
                 continue  # Skip directories
             
-            # Only process sample_photos files
-            if not s3_key.startswith("sample_photos"):
+            # Only process photos files
+            if not s3_key.startswith("photos"):
                 continue
             
             # Download file from Object Storage
@@ -2022,7 +2049,7 @@ async def restore_files():
             
             # Create local file path
             # Convert URL-encoded key to normal path
-            relative_path = s3_key.replace("sample_photos%2F", "sample_photos/")
+            relative_path = s3_key.replace("photos%2F", "photos/")
             local_file_path = upload_dir / relative_path
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
             
