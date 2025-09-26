@@ -571,6 +571,158 @@ async def download_sample_photos():
         }
 
 
+@app.post("/api/test-write-tmp")
+async def test_write_tmp():
+    """Test if we can write to /tmp/ and if files persist"""
+    from pathlib import Path
+    import time
+    
+    # Test writing to /tmp/
+    test_file = Path("/tmp/test_write.txt")
+    test_content = f"Test write at {time.time()}\n"
+    
+    try:
+        # Write test file
+        test_file.write_text(test_content)
+        
+        # Check if it exists immediately
+        exists_immediately = test_file.exists()
+        
+        # Try to read it back
+        if exists_immediately:
+            content = test_file.read_text()
+        else:
+            content = "File not found immediately after write"
+        
+        return {
+            "status": "success",
+            "test_file": str(test_file),
+            "exists_immediately": exists_immediately,
+            "content": content,
+            "file_size": test_file.stat().st_size if exists_immediately else 0
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
+@app.get("/api/check-test-file")
+async def check_test_file():
+    """Check if our test file still exists"""
+    from pathlib import Path
+    
+    test_file = Path("/tmp/test_write.txt")
+    
+    try:
+        if test_file.exists():
+            content = test_file.read_text()
+            stat = test_file.stat()
+            return {
+                "status": "success",
+                "exists": True,
+                "content": content,
+                "file_size": stat.st_size,
+                "modified_time": stat.st_mtime
+            }
+        else:
+            return {
+                "status": "success",
+                "exists": False,
+                "message": "Test file not found"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
+@app.get("/api/debug-upload-dir")
+async def debug_upload_dir():
+    """Debug what's actually in the upload directory"""
+    from pathlib import Path
+    
+    upload_dir = Path(settings.upload_dir)
+    result = {
+        "upload_dir": str(upload_dir),
+        "upload_dir_exists": upload_dir.exists(),
+        "directories": {},
+        "all_files": []
+    }
+    
+    if upload_dir.exists():
+        # List all directories
+        for item in upload_dir.iterdir():
+            if item.is_dir():
+                try:
+                    files = list(item.glob("*"))
+                    result["directories"][item.name] = {
+                        "exists": True,
+                        "count": len(files),
+                        "files": [f.name for f in files[:10]]
+                    }
+                except Exception as e:
+                    result["directories"][item.name] = {
+                        "exists": True,
+                        "error": str(e)
+                    }
+        
+        # List all files in root
+        try:
+            all_files = list(upload_dir.glob("*"))
+            result["all_files"] = [f.name for f in all_files if f.is_file()]
+        except Exception as e:
+            result["all_files"] = f"Error: {e}"
+    
+    return result
+
+
+@app.post("/api/copy-sample-photos")
+async def copy_sample_photos():
+    """Copy sample photos from sample_photos to photos directory"""
+    try:
+        import shutil
+        import uuid
+        from pathlib import Path
+        
+        upload_dir = Path(settings.upload_dir)
+        sample_photos_dir = upload_dir / "sample_photos"
+        photos_dir = upload_dir / "photos"
+        photos_dir.mkdir(parents=True, exist_ok=True)
+        
+        copied_count = 0
+        
+        if sample_photos_dir.exists():
+            for sample_file in sample_photos_dir.glob("*.jpg"):
+                # Generate unique filename
+                unique_filename = f"{uuid.uuid4()}_{sample_file.name}"
+                dest_path = photos_dir / unique_filename
+                
+                # Copy the file
+                shutil.copy2(sample_file, dest_path)
+                copied_count += 1
+                
+                print(f"Copied {sample_file.name} to {unique_filename}")
+        
+        return {
+            "status": "success",
+            "message": f"Copied {copied_count} photos from sample_photos to photos",
+            "copied_count": copied_count
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to copy photos: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/api/clear-and-create-registrants")
 async def clear_and_create_registrants():
     """Clear existing registrants and create fresh ones with photos"""
