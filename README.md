@@ -2,6 +2,8 @@
 
 ![FastOpp Logo](docs/images/fastopp_logo.webp)
 
+> ⚠️ **Educational Project**: This project includes debug endpoints and logging for learning purposes. See [SECURITY.md](SECURITY.md) for production deployment guidelines.
+
 ## What
 
 **Special PostgreSQL-optimized version of FastOpp** designed for deployment on LeapCell and other PostgreSQL-based platforms. This version uses **synchronous database communication** for improved reliability and compatibility with managed PostgreSQL services.
@@ -11,6 +13,7 @@ This is a modified version of the original [FastOpp](https://github.com/Oppkey/F
 - **Synchronous database operations** (instead of async)
 - **LeapCell platform deployment** (tested and verified)
 - **Production-ready database connections** with proper SSL and timeout handling
+- **Educational use** with debug endpoints for learning
 
 ## Key Differences from Original FastOpp
 
@@ -1695,6 +1698,32 @@ The deployment has been verified to work with:
 * [Database](docs/DATABASE.md)
 * [Authentication](docs/AUTHENTICATION.md)
 * [Features](docs/FEATURES.md)
+
+## 🔒 Security & Educational Use
+
+### Educational Project
+This project is designed for **educational purposes** and includes debug endpoints and logging to help students learn:
+
+- **Debug Endpoints**: Intentionally exposed for learning authentication, database operations, and file handling
+- **Debug Logging**: Shows the flow of requests, authentication, and database queries
+- **File Upload Examples**: Demonstrates security concepts like file validation
+- **Database Queries**: Visible for learning SQL and ORM concepts
+
+### Security Features
+- ✅ JWT authentication with proper expiration
+- ✅ Role-based access control (staff/admin)
+- ✅ Password hashing with bcrypt
+- ✅ Security headers (CSP, XSS protection, etc.)
+- ✅ SQL injection protection via SQLModel ORM
+- ✅ File upload validation
+- ✅ Session management with secure cookies
+
+### Production Deployment
+If using this codebase in production, see [SECURITY.md](SECURITY.md) for:
+- Removing debug endpoints
+- Securing logging
+- Environment configuration
+- Additional security measures
 
 ## Guidelines
 

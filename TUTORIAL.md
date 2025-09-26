@@ -69,9 +69,6 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * Once your application is deployed and running, find its public URL (e.g., `https://your-app.leapcell.dev/`)
 * Open your terminal and run the following curl command to trigger the full demo initialization:
 
-  ```bash
-  curl -X POST https://your-app.leapcell.dev/async/init-demo
-  ```
 
 * Monitor your LeapCell project logs for the initialization progress
 
