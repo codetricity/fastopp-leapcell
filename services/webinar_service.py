@@ -64,14 +64,84 @@ class WebinarService:
     @staticmethod
     def upload_photo(registrant_id: str, photo_content: bytes, filename: str) -> tuple[bool, str, Optional[str]]:
         """
-        Upload a photo for a webinar registrant to Object Storage
+        Upload a photo for a webinar registrant
+        
+        Environment-based storage:
+        - development: Local file storage (/static/uploads)
+        - production: Object storage (S3/CDN)
         
         Returns:
             tuple: (success, message, photo_url)
         """
         try:
+            from dependencies.config import get_settings
+            from pathlib import Path
+            
+            settings = get_settings()
+            
+            # Check environment to determine storage method
+            if settings.environment == "development":
+                return WebinarService._upload_photo_local(registrant_id, photo_content, filename, settings)
+            else:
+                return WebinarService._upload_photo_s3(registrant_id, photo_content, filename, settings)
+                
+        except Exception as e:
+            return False, f"Failed to upload photo: {str(e)}", None
+    
+    @staticmethod
+    def _upload_photo_local(registrant_id: str, photo_content: bytes, filename: str, settings) -> tuple[bool, str, Optional[str]]:
+        """Upload photo to local file system (development)"""
+        try:
+            from uuid import UUID
+            from sqlmodel import select
+            
+            # Generate unique filename
+            file_extension = Path(filename).suffix if filename else '.jpg'
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            
+            # Save to local file system
+            upload_dir = Path(settings.upload_dir)
+            photos_dir = upload_dir / "photos"
+            photos_dir.mkdir(parents=True, exist_ok=True)
+            
+            local_path = photos_dir / unique_filename
+            with open(local_path, "wb") as f:
+                f.write(photo_content)
+            
+            # Generate local URL
+            photo_url = f"/static/uploads/photos/{unique_filename}"
+            
+            # Update database
+            try:
+                registrant_uuid = UUID(registrant_id)
+            except ValueError:
+                return False, "Invalid registrant ID", None
+            
+            with SessionLocal() as session:
+                result = session.execute(
+                    select(WebinarRegistrants).where(WebinarRegistrants.id == registrant_uuid)
+                )
+                registrant = result.scalar_one_or_none()
+                
+                if not registrant:
+                    return False, "Registrant not found", None
+                
+                registrant.photo_url = photo_url
+                session.commit()
+            
+            return True, "Photo uploaded successfully to local storage!", photo_url
+            
+        except Exception as e:
+            return False, f"Local upload failed: {str(e)}", None
+    
+    @staticmethod
+    def _upload_photo_s3(registrant_id: str, photo_content: bytes, filename: str, settings) -> tuple[bool, str, Optional[str]]:
+        """Upload photo to object storage (production)"""
+        try:
             import boto3
             from botocore.exceptions import ClientError
+            from uuid import UUID
+            from sqlmodel import select
             
             # Check S3 credentials
             s3_access_key = os.getenv("S3_ACCESS_KEY")

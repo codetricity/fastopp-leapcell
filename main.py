@@ -472,7 +472,32 @@ def init_demo_async():
         # Copy sample photos to photos directory
         print("📸 Copying sample photos to photos directory...")
         upload_dir = Path(settings.upload_dir)
-        sample_photos_dir = upload_dir / "sample_photos"
+        
+        # Try multiple possible locations for sample_photos
+        possible_sample_dirs = [
+            upload_dir / "sample_photos",  # /tmp/uploads/sample_photos
+            Path("/sample_photos"),        # /sample_photos (root level)
+            Path("./sample_photos"),       # ./sample_photos (relative)
+        ]
+        
+        sample_photos_dir = None
+        for dir_path in possible_sample_dirs:
+            if dir_path.exists():
+                sample_photos_dir = dir_path
+                print(f"  📁 Found sample_photos at: {dir_path}")
+                break
+        
+        if not sample_photos_dir:
+            print("  ❌ No sample_photos directory found in any expected location")
+            return {
+                "status": "error",
+                "message": "Sample photos directory not found",
+                "details": {
+                    "searched_paths": [str(p) for p in possible_sample_dirs],
+                    "upload_dir": str(upload_dir)
+                }
+            }
+        
         photos_dir = upload_dir / "photos"
         photos_dir.mkdir(parents=True, exist_ok=True)
         
@@ -493,7 +518,7 @@ def init_demo_async():
         # Get list of copied photos for registrants
         copied_photos = list(photos_dir.glob("*.jpg"))
         
-        # Sample registrants data with local photo URLs
+        # Sample registrants data with CDN photo URLs (no local storage needed)
         sample_registrants = [
             {
                 "name": "Sarah Johnson",
@@ -503,7 +528,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Interested in AI implementation strategies",
-                "photo_url": f"/static/uploads/photos/{copied_photos[0].name}" if copied_photos else None
+                "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Michael Chen",
@@ -513,7 +538,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Looking for AI tools for data analysis",
-                "photo_url": f"/static/uploads/photos/{copied_photos[1].name}" if len(copied_photos) > 1 else None
+                "photo_url": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Emily Rodriguez",
@@ -523,7 +548,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed", 
                 "notes": "Want to learn about AI automation",
-                "photo_url": f"/static/uploads/photos/{copied_photos[2].name}" if len(copied_photos) > 2 else None
+                "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "David Kim",
@@ -533,7 +558,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Exploring AI for customer service",
-                "photo_url": f"/static/uploads/photos/{copied_photos[3].name}" if len(copied_photos) > 3 else None
+                "photo_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face"
             }
         ]
         
@@ -566,11 +591,11 @@ def init_demo_async():
         print("✅ Demo initialization complete!")
         return {
             "status": "success",
-            "message": "Demo initialization completed successfully with local photos",
+            "message": "Demo initialization completed successfully with CDN photos",
             "details": {
                 "registrants_created": created_count,
                 "photos_copied": copied_count,
-                "image_source": "Local photos (copied from sample_photos to photos)",
+                "image_source": "CDN URLs (no local storage needed)",
                 "persistent": True
             }
         }
