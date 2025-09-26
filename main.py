@@ -23,8 +23,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "default-src 'self'; "
             "img-src 'self' data: https:; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
-            "font-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "font-src 'self' data: https://cdnjs.cloudflare.com; "
             "connect-src 'self' https:; "
             "frame-ancestors 'none';"
         )
@@ -453,6 +453,33 @@ async def change_password_submit(request: Request):
         )
 
 
+@app.post("/init-database")
+def init_database():
+    """Initialize database by creating all tables"""
+    try:
+        from sqlmodel import SQLModel
+        from db import engine
+        
+        print("🔄 Initializing database tables...")
+        
+        with engine.begin() as conn:
+            SQLModel.metadata.create_all(conn)
+        
+        print("✅ Database tables created successfully!")
+        return {
+            "status": "success", 
+            "message": "Database tables created successfully",
+            "tables_created": list(SQLModel.metadata.tables.keys())
+        }
+    except Exception as e:
+        print(f"❌ Database initialization failed: {e}")
+        return {
+            "status": "error", 
+            "message": f"Database initialization failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/async/init-demo")
 def init_demo_async():
     """Initialize demo data using CDN-based images (no local file copying needed)"""
@@ -463,6 +490,16 @@ def init_demo_async():
         from sqlmodel import select, delete
         
         print("🚀 Starting demo initialization with CDN images...")
+        
+        # First, ensure database tables exist
+        print("🔄 Ensuring database tables are initialized...")
+        from sqlmodel import SQLModel
+        from db import engine
+        
+        with engine.begin() as conn:
+            SQLModel.metadata.create_all(conn)
+        
+        print("✅ Database tables verified/created")
 
         # Get the session factory from app state
         session_factory = app.state.session_factory
@@ -544,8 +581,9 @@ def init_demo_async():
         print("✅ Demo initialization complete!")
         return {
             "status": "success",
-            "message": "Demo initialization completed successfully with CDN photos",
+            "message": "Database initialized and demo data created successfully with CDN photos",
             "details": {
+                "database_initialized": True,
                 "registrants_created": created_count,
                 "photos_copied": copied_count,
                 "image_source": "CDN URLs (no local storage needed)",
