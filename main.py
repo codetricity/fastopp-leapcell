@@ -3,6 +3,32 @@
 # =========================
 import os
 from pathlib import Path
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to prevent false positive security warnings"""
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        
+        # Add security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Content Security Policy
+        csp = (
+            "default-src 'self'; "
+            "img-src 'self' data: https:; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https:; "
+            "frame-ancestors 'none';"
+        )
+        response.headers["Content-Security-Policy"] = csp
+        
+        return response
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -10,6 +36,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from dotenv import load_dotenv
 from admin.setup import setup_admin
 from routes.chat import router as chat_router
@@ -44,6 +71,7 @@ PHOTOS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Add proxy headers middleware for production deployments
 @app.middleware("http")
@@ -113,6 +141,17 @@ async def health_check():
 async def leapcell_health_check():
     """LeapCell health check endpoint"""
     return {"status": "healthy", "message": "FastOpp Demo app is running"}
+
+@app.get("/robots.txt")
+async def robots_txt():
+    """Provide robots.txt to help with SEO and security"""
+    content = """User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /debug/
+Disallow: /api/
+"""
+    return HTMLResponse(content=content, media_type="text/plain")
 
 
 @app.post("/async/init-demo")

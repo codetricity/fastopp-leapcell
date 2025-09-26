@@ -1567,6 +1567,19 @@ UPLOAD_DIR=/persistent/uploads
    - Set `S3_BUCKET` environment variable for your Object Storage bucket
    - Optional: Set `S3_ENDPOINT_URL` and `S3_REGION` for custom configurations
 
+4. **CDN-Based Image Serving (Recommended)**:
+   ```bash
+   # Create registrants with CDN photo URLs (bypasses file storage issues)
+   curl -X POST https://your-app.leapcell.dev/api/create-registrants-with-cdn
+   ```
+   
+   **Benefits of CDN Approach**:
+   - **No file storage issues**: Images served directly from CDN
+   - **Bypasses ephemeral storage**: No `/tmp/` directory problems
+   - **Simpler deployment**: No file copying or backup/restore needed
+   - **Better performance**: CDN provides faster image loading
+   - **More reliable**: No dependency on local file system
+
 4. **File Persistence Strategy**:
    - **Local Development**: Files stored in `static/uploads/` (persistent)
    - **LeapCell Production**: Files in `/tmp/uploads/` + S3 backup for persistence

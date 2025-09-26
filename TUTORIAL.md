@@ -80,8 +80,16 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * Check the `/debug/database-data` endpoint to verify database tables are populated
 * Test the health check endpoint: `https://your-app.leapcell.dev/kaithheathcheck`
 
-### 8. Test S3 Object Storage (Optional)
+### 8. Test Image Handling (Choose One Approach)
 
+#### Option A: CDN-Based Images (Recommended)
+* **Create registrants with CDN photo URLs** (bypasses file storage issues):
+  ```bash
+  curl -X POST https://your-app.leapcell.dev/api/create-registrants-with-cdn
+  ```
+* **Benefits**: No file storage issues, images served from CDN, simpler deployment
+
+#### Option B: S3 Object Storage (Traditional)
 * **Backup photos to S3**:
   ```bash
   curl -X POST https://your-app.leapcell.dev/api/backup-files
@@ -90,6 +98,7 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
   ```bash
   curl -X POST https://your-app.leapcell.dev/api/restore-files
   ```
+* **Benefits**: Full control over file storage, traditional approach
 
 ## Troubleshooting
 
@@ -99,6 +108,14 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * **S3 Backup/Restore Fails**: Verify all S3 environment variables are set correctly
 * **Initialization Timeout**: Check deployment logs for database connection issues
 * **File Upload Issues**: Ensure `UPLOAD_DIR` is set to `/tmp/uploads`
+* **Missing Images**: Use CDN-based approach (`/api/create-registrants-with-cdn`) to bypass file storage issues
+* **Browser Security Warnings**: These are false positives - bypass browser warnings to access the site
+* **Security Headers**: The application includes comprehensive security headers to prevent false positive warnings:
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Content-Security-Policy` with strict rules
+  - `Referrer-Policy: strict-origin-when-cross-origin`
 
 ### Debug Endpoints:
 
