@@ -453,6 +453,66 @@ async def change_password_submit(request: Request):
         )
 
 
+@app.post("/create-superuser")
+def create_superuser():
+    """Create a superuser account"""
+    try:
+        from sqlmodel import select
+        from models import User
+        from fastapi_users.password import PasswordHelper
+        
+        print("🔄 Creating superuser...")
+        
+        # Get the session factory from app state
+        session_factory = app.state.session_factory
+        
+        with session_factory() as session:
+            password_helper = PasswordHelper()
+            password = "admin123"
+            hashed_pw = password_helper.hash(password)
+            
+            # Check if superuser already exists
+            result = session.execute(
+                select(User).where(User.email == "admin@example.com")
+            )
+            existing_user = result.scalar_one_or_none()
+            if existing_user:
+                print("⚠️  Superuser already exists: admin@example.com")
+                return {
+                    "status": "warning",
+                    "message": "Superuser already exists: admin@example.com",
+                    "email": "admin@example.com",
+                    "password": "admin123"
+                }
+                
+            user = User(
+                email="admin@example.com",
+                hashed_password=hashed_pw,
+                is_active=True,
+                is_superuser=True,
+                is_staff=True
+            )
+            session.add(user)
+            session.commit()
+            
+        print("✅ Superuser created: admin@example.com / admin123")
+        return {
+            "status": "success",
+            "message": "Superuser created successfully",
+            "email": "admin@example.com",
+            "password": "admin123",
+            "permissions": "Full admin access"
+        }
+        
+    except Exception as e:
+        print(f"❌ Superuser creation failed: {e}")
+        return {
+            "status": "error",
+            "message": f"Superuser creation failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/init-database")
 def init_database():
     """Initialize database by creating all tables"""
@@ -582,6 +642,38 @@ def init_demo_async():
         
         print(f"✅ Created {products_created} sample products")
         
+        # Create superuser
+        print("👤 Creating superuser...")
+        from sqlmodel import select
+        from models import User
+        from fastapi_users.password import PasswordHelper
+        
+        superuser_created = False
+        with session_factory() as session:
+            password_helper = PasswordHelper()
+            password = "admin123"
+            hashed_pw = password_helper.hash(password)
+            
+            # Check if superuser already exists
+            result = session.execute(
+                select(User).where(User.email == "admin@example.com")
+            )
+            existing_user = result.scalar_one_or_none()
+            if not existing_user:
+                user = User(
+                    email="admin@example.com",
+                    hashed_password=hashed_pw,
+                    is_active=True,
+                    is_superuser=True,
+                    is_staff=True
+                )
+                session.add(user)
+                session.commit()
+                superuser_created = True
+                print("✅ Superuser created: admin@example.com / admin123")
+            else:
+                print("⚠️  Superuser already exists: admin@example.com")
+        
         # No need to copy sample photos - using CDN URLs directly
         print("📸 Using CDN URLs for sample photos (no local file copying needed)")
         copied_count = 0
@@ -662,6 +754,9 @@ def init_demo_async():
             "message": "Database initialized and demo data created successfully with CDN photos",
             "details": {
                 "database_initialized": True,
+                "superuser_created": superuser_created,
+                "superuser_email": "admin@example.com",
+                "superuser_password": "admin123",
                 "products_created": products_created,
                 "registrants_created": created_count,
                 "photos_copied": copied_count,
