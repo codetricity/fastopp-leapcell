@@ -105,8 +105,8 @@ class WebinarService:
                 ContentType='image/jpeg'
             )
             
-            # Generate CDN URL
-            photo_url = f"https://1xg7ah.leapcellobj.com/{s3_bucket}/{s3_key}"
+            # Generate CDN URL using the user's S3 bucket
+            photo_url = f"https://objstorage.leapcell.io/{s3_bucket}/{s3_key}"
             
             # Convert string to UUID
             try:

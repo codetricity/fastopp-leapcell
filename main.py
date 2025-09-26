@@ -477,7 +477,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Interested in AI implementation strategies",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Michael Chen",
@@ -487,7 +487,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Looking for AI tools for data analysis",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Emily Rodriguez",
@@ -497,7 +497,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed", 
                 "notes": "Want to learn about AI automation",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "David Kim",
@@ -507,7 +507,7 @@ def init_demo_async():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Exploring AI for customer service",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face"
             }
         ]
         
@@ -933,7 +933,7 @@ async def create_registrants_with_cdn():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Interested in AI implementation strategies",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Michael Chen",
@@ -943,7 +943,7 @@ async def create_registrants_with_cdn():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Looking for AI tools for data analysis",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "Emily Rodriguez",
@@ -953,7 +953,7 @@ async def create_registrants_with_cdn():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed", 
                 "notes": "Want to learn about AI automation",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face"
             },
             {
                 "name": "David Kim",
@@ -963,7 +963,7 @@ async def create_registrants_with_cdn():
                 "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
                 "status": "confirmed",
                 "notes": "Exploring AI for customer service",
-                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+                "photo_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face"
             }
         ]
         
@@ -1020,12 +1020,12 @@ async def download_from_cdn():
         sample_photos_dir = upload_dir / "sample_photos"
         sample_photos_dir.mkdir(parents=True, exist_ok=True)
         
-        # CDN URLs for the sample photos
+        # Generic CDN URLs for sample photos (works for any LeapCell account)
         cdn_urls = [
-            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg",
-            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg",
-            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg",
-            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face", 
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face"
         ]
         
         downloaded_count = 0
