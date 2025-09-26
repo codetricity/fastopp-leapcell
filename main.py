@@ -481,6 +481,27 @@ async def backup_files():
         }
 
 
+@app.post("/api/create-sample-registrants")
+async def create_sample_registrants():
+    """Create sample webinar registrants with photos"""
+    try:
+        from scripts.add_sample_webinar_registrants import add_sample_registrants
+        import asyncio
+        
+        await add_sample_registrants()
+        
+        return {
+            "status": "success",
+            "message": "Sample registrants created successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create sample registrants: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/api/restore-files")
 async def restore_files():
     """Restore uploaded files from LeapCell Object Storage"""
