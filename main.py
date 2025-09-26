@@ -504,6 +504,84 @@ def init_demo_async():
         # Get the session factory from app state
         session_factory = app.state.session_factory
         
+        # Create sample products
+        print("🛍️ Creating sample products...")
+        from models import Product
+        
+        sample_products = [
+            {
+                "name": "MacBook Pro 16-inch",
+                "description": "Latest MacBook Pro with M3 chip, 16GB RAM, 512GB SSD",
+                "price": 2499.99,
+                "category": "Electronics",
+                "in_stock": True
+            },
+            {
+                "name": "iPhone 15 Pro",
+                "description": "Apple's latest iPhone with titanium design and A17 Pro chip",
+                "price": 999.99,
+                "category": "Electronics",
+                "in_stock": True
+            },
+            {
+                "name": "Nike Air Max 270",
+                "description": "Comfortable running shoes with Air Max technology",
+                "price": 129.99,
+                "category": "Footwear",
+                "in_stock": True
+            },
+            {
+                "name": "Starbucks Coffee Mug",
+                "description": "Ceramic coffee mug with Starbucks branding",
+                "price": 12.99,
+                "category": "Home & Kitchen",
+                "in_stock": False
+            },
+            {
+                "name": "Python Programming Book",
+                "description": "Comprehensive guide to Python programming language",
+                "price": 49.99,
+                "category": "Books",
+                "in_stock": True
+            },
+            {
+                "name": "Wireless Bluetooth Headphones",
+                "description": "Noise-cancelling wireless headphones with 30-hour battery",
+                "price": 199.99,
+                "category": "Electronics",
+                "in_stock": True
+            },
+            {
+                "name": "Organic Cotton T-Shirt",
+                "description": "Comfortable organic cotton t-shirt in various colors",
+                "price": 24.99,
+                "category": "Clothing",
+                "in_stock": True
+            },
+            {
+                "name": "Yoga Mat",
+                "description": "Non-slip yoga mat perfect for home workouts",
+                "price": 34.99,
+                "category": "Sports & Fitness",
+                "in_stock": True
+            }
+        ]
+        
+        products_created = 0
+        with session_factory() as session:
+            # Clear existing products
+            session.execute(delete(Product))
+            session.commit()
+            
+            for product_data in sample_products:
+                product = Product(**product_data)
+                session.add(product)
+                products_created += 1
+            
+            session.commit()
+        
+        print(f"✅ Created {products_created} sample products")
+        
         # No need to copy sample photos - using CDN URLs directly
         print("📸 Using CDN URLs for sample photos (no local file copying needed)")
         copied_count = 0
@@ -584,6 +662,7 @@ def init_demo_async():
             "message": "Database initialized and demo data created successfully with CDN photos",
             "details": {
                 "database_initialized": True,
+                "products_created": products_created,
                 "registrants_created": created_count,
                 "photos_copied": copied_count,
                 "image_source": "CDN URLs (no local storage needed)",
