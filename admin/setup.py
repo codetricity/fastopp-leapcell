@@ -4,6 +4,7 @@
 import os
 from sqladmin import Admin
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from dependencies.database import create_database_engine
 from dependencies.config import get_settings
 from auth.admin import AdminAuth
@@ -15,13 +16,13 @@ def setup_admin(app: FastAPI, secret_key: str):
     # Get settings and create database engine using dependency injection
     settings = get_settings()
     engine = create_database_engine(settings)
-    
+
     # Check if we're in production (HTTPS environment)
     is_production = (os.getenv("RAILWAY_ENVIRONMENT") or
                      os.getenv("PRODUCTION") or
                      os.getenv("FORCE_HTTPS") or
                      os.getenv("ENVIRONMENT") == "production")
-    
+
     # Configure admin with HTTPS support for production
     if is_production:
         admin = Admin(
@@ -38,7 +39,18 @@ def setup_admin(app: FastAPI, secret_key: str):
             engine=engine,
             authentication_backend=AdminAuth(secret_key=secret_key)
         )
-    
+
+    # Mount SQLAdmin static files to ensure fonts and assets load properly
+    try:
+        import sqladmin
+        sqladmin_path = os.path.dirname(sqladmin.__file__)
+        static_path = os.path.join(sqladmin_path, "statics")
+
+        if os.path.exists(static_path):
+            app.mount("/admin/statics", StaticFiles(directory=static_path), name="admin_statics")
+    except Exception as e:
+        print(f"Warning: Could not mount SQLAdmin static files: {e}")
+
     # Register admin views (all features for demo application)
     admin.add_view(UserAdmin)
     admin.add_view(ProductAdmin)
