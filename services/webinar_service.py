@@ -180,7 +180,8 @@ class WebinarService:
             # Try to get CDN URL from environment variable, otherwise construct it
             cdn_base_url = os.getenv("S3_CDN_URL")
             if cdn_base_url:
-                photo_url = f"{cdn_base_url}/{s3_bucket}/{s3_key}"
+                # CDN base URL already includes the bucket, just append the key
+                photo_url = f"{cdn_base_url}/{s3_key}"
             else:
                 # Fallback: use the S3 endpoint URL (may not work for CDN)
                 photo_url = f"{s3_endpoint_url}/{s3_bucket}/{s3_key}"
