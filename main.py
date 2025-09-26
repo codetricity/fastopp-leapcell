@@ -563,10 +563,10 @@ async def create_sample_registrants():
         
         created_count = 0
         
-        async with session_factory() as session:
+        with session_factory() as session:
             for registrant_data in sample_registrants:
                 # Check if registrant already exists
-                existing = await session.execute(
+                existing = session.execute(
                     select(WebinarRegistrants).where(WebinarRegistrants.email == registrant_data['email'])
                 )
                 if existing.scalar_one_or_none():
@@ -602,7 +602,7 @@ async def create_sample_registrants():
                 session.add(registrant)
                 created_count += 1
             
-            await session.commit()
+            session.commit()
         
         return {
             "status": "success",
