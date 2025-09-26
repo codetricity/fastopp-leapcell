@@ -86,14 +86,14 @@ FastOpp currently supports:
 - **Feature**: HTTP endpoints for file backup/restore operations
 - **Implementation**:
   ```python
-  @app.post("/admin/backup-files")
+  @app.post("/api/backup-files")
   async def backup_files():
       """Backup uploaded files to LeapCell Object Storage"""
       # Uploads all files from /tmp/uploads to Object Storage
       # Preserves directory structure
       # Returns count of files backed up
   
-  @app.post("/admin/restore-files")
+  @app.post("/api/restore-files")
   async def restore_files():
       """Restore uploaded files from LeapCell Object Storage"""
       # Downloads all files from Object Storage to /tmp/uploads
@@ -251,8 +251,8 @@ FastOpp currently supports:
 ### File Management Endpoints
 | Endpoint | Method | Description | Purpose |
 |----------|--------|-------------|---------|
-| `/admin/backup-files` | POST | Backup files to Object Storage | Upload all files from `/tmp/uploads` to Object Storage |
-| `/admin/restore-files` | POST | Restore files from Object Storage | Download all files from Object Storage to `/tmp/uploads` |
+| `/api/backup-files` | POST | Backup files to Object Storage | Upload all files from `/tmp/uploads` to Object Storage |
+| `/api/restore-files` | POST | Restore files from Object Storage | Download all files from Object Storage to `/tmp/uploads` |
 
 ### Usage Examples
 ```bash
@@ -263,16 +263,16 @@ curl -X POST https://your-app.leapcell.dev/async/init-demo
 curl https://your-app.leapcell.dev/debug/database-data
 
 # Backup files to Object Storage
-curl -X POST https://your-app.leapcell.dev/admin/backup-files
+curl -X POST https://your-app.leapcell.dev/api/backup-files
 
 # Restore files from Object Storage
-curl -X POST https://your-app.leapcell.dev/admin/restore-files
+curl -X POST https://your-app.leapcell.dev/api/restore-files
 ```
 
 ### Workflow
 1. **Initial Setup**: Run `/async/init-demo` to create database and sample data
-2. **Backup Files**: Run `/admin/backup-files` to save uploaded files to Object Storage
-3. **After Restart**: Run `/admin/restore-files` to restore files from Object Storage
+2. **Backup Files**: Run `/api/backup-files` to save uploaded files to Object Storage
+3. **After Restart**: Run `/api/restore-files` to restore files from Object Storage
 4. **Verification**: Use `/debug/database-data` to verify data exists
 
 ## Implementation Priority

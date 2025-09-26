@@ -31,10 +31,10 @@ The updated `main.py` now:
 - Uses custom endpoint `/static/uploads/photos/{filename}` for photos
 - Falls back to Object Storage when local files don't exist
 
-### Step 2: Restore Sample Photos to Object Storage
-Run this script to upload the sample photos to Object Storage:
+### Step 2: Restore Photos from Object Storage
+Call the existing restore endpoint:
 ```bash
-uv run python scripts/restore_sample_photos_to_s3.py
+curl -X POST https://fastopp-leapcell-craig5992-0c07r9lc.leapcell.dev/api/restore-files
 ```
 
 ### Step 3: Test the Fix

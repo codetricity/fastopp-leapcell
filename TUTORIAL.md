@@ -84,11 +84,11 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 
 * **Backup photos to S3**:
   ```bash
-  curl -X POST https://your-app.leapcell.dev/admin/backup-files
+  curl -X POST https://your-app.leapcell.dev/api/backup-files
   ```
 * **Restore photos from S3**:
   ```bash
-  curl -X POST https://your-app.leapcell.dev/admin/restore-files
+  curl -X POST https://your-app.leapcell.dev/api/restore-files
   ```
 
 ## Troubleshooting

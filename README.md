@@ -1114,7 +1114,7 @@ Create a `.env` file in your project root:
 * `S3_ENDPOINT_URL`: LeapCell Object Storage endpoint (default: `https://objstorage.leapcell.io`)
 * `S3_REGION`: LeapCell Object Storage region (default: `us-east-1`)
 
-**Note**: Without these environment variables, the `/admin/backup-files` and `/admin/restore-files` endpoints will return configuration errors.
+**Note**: Without these environment variables, the `/api/backup-files` and `/api/restore-files` endpoints will return configuration errors.
 
 ## Key Differences from Original FastOpp
 
@@ -1556,10 +1556,10 @@ UPLOAD_DIR=/persistent/uploads
 3. **S3 Object Storage Integration**:
    ```bash
    # Backup photos to S3
-   curl -X POST https://your-app.leapcell.dev/admin/backup-files
+   curl -X POST https://your-app.leapcell.dev/api/backup-files
    
    # Restore photos from S3
-   curl -X POST https://your-app.leapcell.dev/admin/restore-files
+   curl -X POST https://your-app.leapcell.dev/api/restore-files
    ```
    
    **Note**: The S3 backup/restore functions require proper environment variable configuration:

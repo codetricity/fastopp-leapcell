@@ -408,7 +408,7 @@ def debug_connection():
         }
 
 
-@app.post("/admin/backup-files")
+@app.post("/api/backup-files")
 async def backup_files():
     """Backup uploaded files to LeapCell Object Storage"""
     try:
@@ -481,7 +481,7 @@ async def backup_files():
         }
 
 
-@app.post("/admin/restore-files")
+@app.post("/api/restore-files")
 async def restore_files():
     """Restore uploaded files from LeapCell Object Storage"""
     try:
