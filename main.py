@@ -500,6 +500,66 @@ async def backup_files():
         }
 
 
+@app.get("/api/debug-exact-s3-keys")
+async def debug_exact_s3_keys():
+    """Debug the exact S3 keys and try to download them"""
+    try:
+        import boto3
+        from pathlib import Path
+        
+        # Get upload directory
+        settings = get_settings()
+        upload_dir = Path(settings.upload_dir)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize S3 client
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        # List all objects
+        response = s3.list_objects_v2(Bucket=settings.s3_bucket)
+        objects = response.get('Contents', [])
+        
+        results = []
+        for obj in objects:
+            s3_key = obj["Key"]
+            try:
+                # Try to download this specific object
+                file_response = s3.get_object(Bucket=settings.s3_bucket, Key=s3_key)
+                results.append({
+                    "key": s3_key,
+                    "size": obj["Size"],
+                    "download_status": "success",
+                    "content_length": file_response['ContentLength']
+                })
+            except Exception as e:
+                results.append({
+                    "key": s3_key,
+                    "size": obj["Size"],
+                    "download_status": "failed",
+                    "error": str(e)
+                })
+        
+        return {
+            "status": "success",
+            "bucket": settings.s3_bucket,
+            "object_count": len(objects),
+            "results": results
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to debug S3 keys: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.get("/api/test-restore-single")
 async def test_restore_single():
     """Test restoring a single file to debug the issue"""
