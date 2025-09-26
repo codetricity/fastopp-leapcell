@@ -500,6 +500,212 @@ async def backup_files():
         }
 
 
+@app.post("/api/create-registrants-with-cdn")
+async def create_registrants_with_cdn():
+    """Create registrants with CDN URLs directly - no file copying needed"""
+    try:
+        import uuid
+        from datetime import datetime, timezone
+        from models import WebinarRegistrants
+        from sqlmodel import select, delete
+        
+        # Get the session factory from app state
+        session_factory = app.state.session_factory
+        
+        # Sample registrants data with CDN URLs
+        sample_registrants = [
+            {
+                "name": "Sarah Johnson",
+                "email": "sarah.johnson@techcorp.com",
+                "company": "TechCorp Solutions",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Interested in AI implementation strategies",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg"
+            },
+            {
+                "name": "Michael Chen",
+                "email": "michael.chen@innovate.com",
+                "company": "Innovate Labs",
+                "webinar_title": "AI in Business: Practical Applications", 
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Looking for AI tools for data analysis",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg"
+            },
+            {
+                "name": "Emily Rodriguez",
+                "email": "emily.rodriguez@startup.io",
+                "company": "StartupIO",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed", 
+                "notes": "Want to learn about AI automation",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg"
+            },
+            {
+                "name": "David Kim",
+                "email": "david.kim@enterprise.com",
+                "company": "Enterprise Systems",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Exploring AI for customer service",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+            }
+        ]
+        
+        created_count = 0
+        
+        with session_factory() as session:
+            # Clear existing registrants
+            session.execute(delete(WebinarRegistrants))
+            session.commit()
+            
+            for registrant_data in sample_registrants:
+                # Create new registrant with CDN URL
+                registrant = WebinarRegistrants(
+                    id=uuid.uuid4(),
+                    name=registrant_data['name'],
+                    email=registrant_data['email'],
+                    company=registrant_data['company'],
+                    webinar_title=registrant_data['webinar_title'],
+                    webinar_date=registrant_data['webinar_date'],
+                    status=registrant_data['status'],
+                    notes=registrant_data['notes'],
+                    photo_url=registrant_data['photo_url']  # Direct CDN URL
+                )
+                
+                session.add(registrant)
+                created_count += 1
+            
+            session.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Created {created_count} registrants with CDN photo URLs",
+            "created_count": created_count
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create registrants: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
+@app.post("/api/download-from-cdn")
+async def download_from_cdn():
+    """Download sample photos directly from CDN instead of S3 API"""
+    try:
+        import requests
+        from pathlib import Path
+        
+        # Get upload directory
+        settings = get_settings()
+        upload_dir = Path(settings.upload_dir)
+        sample_photos_dir = upload_dir / "sample_photos"
+        sample_photos_dir.mkdir(parents=True, exist_ok=True)
+        
+        # CDN URLs for the sample photos
+        cdn_urls = [
+            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg",
+            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg",
+            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg",
+            "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+        ]
+        
+        downloaded_count = 0
+        errors = []
+        
+        for i, url in enumerate(cdn_urls, 1):
+            try:
+                # Download from CDN
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                
+                # Save to local directory
+                filename = f"sample_photo_{i}.jpg"
+                local_path = sample_photos_dir / filename
+                
+                with open(local_path, "wb") as f:
+                    f.write(response.content)
+                
+                downloaded_count += 1
+                print(f"Downloaded {filename} from CDN")
+                
+            except Exception as e:
+                error_msg = f"Failed to download sample_photo_{i}.jpg: {e}"
+                print(error_msg)
+                errors.append(error_msg)
+        
+        return {
+            "status": "success",
+            "message": f"Downloaded {downloaded_count} sample photos from CDN",
+            "downloaded_count": downloaded_count,
+            "errors": errors,
+            "local_path": str(sample_photos_dir)
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to download from CDN: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
+@app.get("/api/debug-bucket-mismatch")
+async def debug_bucket_mismatch():
+    """Debug if there's a bucket mismatch between upload and download"""
+    try:
+        import boto3
+        
+        # Get settings
+        settings = get_settings()
+        
+        # Initialize S3 client
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        # Check what bucket we're using
+        bucket_name = settings.s3_bucket
+        
+        # Try to list objects in this bucket
+        try:
+            response = s3.list_objects_v2(Bucket=bucket_name)
+            objects = response.get('Contents', [])
+            
+            return {
+                "status": "success",
+                "bucket_name": bucket_name,
+                "object_count": len(objects),
+                "objects": [obj['Key'] for obj in objects],
+                "message": "Bucket access successful"
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "bucket_name": bucket_name,
+                "error": str(e),
+                "message": "Bucket access failed"
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to debug bucket: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.get("/api/debug-exact-s3-keys")
 async def debug_exact_s3_keys():
     """Debug the exact S3 keys and try to download them"""
