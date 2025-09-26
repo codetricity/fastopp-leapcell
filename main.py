@@ -500,6 +500,92 @@ async def backup_files():
         }
 
 
+@app.post("/api/download-sample-photos-to-s3")
+async def download_sample_photos_to_s3():
+    """Download sample photos directly to Object Storage"""
+    try:
+        import requests
+        from pathlib import Path
+        import boto3
+        from botocore.exceptions import ClientError
+
+        # Check S3 credentials
+        if not all([settings.s3_access_key, settings.s3_secret_key, settings.s3_bucket]):
+            return {
+                "status": "error",
+                "message": "S3 credentials not configured. Set S3_ACCESS_KEY, S3_SECRET_KEY, and S3_BUCKET environment variables."
+            }
+
+        # Initialize S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+
+        # Sample photos from Unsplash
+        sample_photos = [
+            {
+                "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+                "filename": "sample_photo_1.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
+                "filename": "sample_photo_2.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
+                "filename": "sample_photo_3.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
+                "filename": "sample_photo_4.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
+                "filename": "sample_photo_5.jpg"
+            }
+        ]
+
+        uploaded_count = 0
+
+        for photo in sample_photos:
+            try:
+                # Download the image
+                response = requests.get(photo["url"], timeout=10)
+                response.raise_for_status()
+                
+                # Upload directly to S3
+                s3_key = f"sample_photos/{photo['filename']}"
+                s3_client.put_object(
+                    Bucket=settings.s3_bucket,
+                    Key=s3_key,
+                    Body=response.content,
+                    ContentType='image/jpeg'
+                )
+                
+                uploaded_count += 1
+                print(f"Uploaded {photo['filename']} to S3")
+
+            except Exception as e:
+                print(f"Failed to upload {photo['filename']}: {e}")
+
+        return {
+            "status": "success",
+            "message": f"Uploaded {uploaded_count} sample photos to Object Storage",
+            "uploaded_count": uploaded_count
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to upload sample photos to S3: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/api/download-sample-photos")
 async def download_sample_photos():
     """Download sample photos from Unsplash"""
