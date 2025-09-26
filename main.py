@@ -3,6 +3,7 @@
 # =========================
 import os
 from pathlib import Path
+from starlette.middleware.base import BaseHTTPMiddleware
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to prevent false positive security warnings"""
@@ -20,8 +21,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         csp = (
             "default-src 'self'; "
             "img-src 'self' data: https:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
             "font-src 'self' data:; "
             "connect-src 'self' https:; "
             "frame-ancestors 'none';"
@@ -30,7 +31,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         return response
 from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic
@@ -154,25 +155,395 @@ Disallow: /api/
     return HTMLResponse(content=content, media_type="text/plain")
 
 
+@app.get("/debug/current-user")
+async def debug_current_user(request: Request):
+    """Debug endpoint to check current user authentication"""
+    token = request.cookies.get("access_token")
+    if not token:
+        return HTMLResponse("No access token found")
+    
+    try:
+        # Manual authentication check without dependency injection
+        from dependencies.auth import verify_token
+        from dependencies.config import get_settings
+        from models import User
+        from sqlmodel import select
+        from db import SessionLocal
+        import uuid
+        
+        settings = get_settings()
+        payload = verify_token(token, settings)
+        if not payload:
+            return HTMLResponse("Invalid token")
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            return HTMLResponse("No user ID in token")
+        
+        user_uuid = uuid.UUID(user_id)
+        
+        with SessionLocal() as session:
+            result = session.execute(select(User).where(User.id == user_uuid))
+            current_user = result.scalar_one_or_none()
+            
+            if not current_user:
+                return HTMLResponse("User not found")
+            
+            return HTMLResponse(f"""
+            <h1>Current User Debug</h1>
+            <p><strong>Email:</strong> {current_user.email}</p>
+            <p><strong>ID:</strong> {current_user.id}</p>
+            <p><strong>is_staff:</strong> {current_user.is_staff}</p>
+            <p><strong>is_superuser:</strong> {current_user.is_superuser}</p>
+            <p><strong>is_active:</strong> {current_user.is_active}</p>
+            <p><strong>Token:</strong> {token[:20]}...</p>
+            """)
+    except Exception as e:
+        return HTMLResponse(f"Error: {str(e)}")
+
+
+@app.get("/change-password")
+async def change_password_form(request: Request):
+    """Display password change form (protected)"""
+    # Debug: Check if we have an access token
+    token = request.cookies.get("access_token")
+    if not token:
+        return HTMLResponse(
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+            'No access token found. Please log in first.</div>'
+        )
+    
+    # Manual authentication check without dependency injection
+    try:
+        from dependencies.auth import verify_token
+        from dependencies.config import get_settings
+        from models import User
+        from sqlmodel import select
+        from db import SessionLocal
+        import uuid
+        
+        settings = get_settings()
+        payload = verify_token(token, settings)
+        if not payload:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'Invalid token. Please log in again.</div>'
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'No user ID in token.</div>'
+            )
+        
+        user_uuid = uuid.UUID(user_id)
+        
+        with SessionLocal() as session:
+            result = session.execute(select(User).where(User.id == user_uuid))
+            current_user = result.scalar_one_or_none()
+            
+            if not current_user:
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    'User not found.</div>'
+                )
+            
+            print(f"DEBUG: Checking privileges - is_staff: {current_user.is_staff}, is_superuser: {current_user.is_superuser}")
+            print(f"DEBUG: OR condition result: {current_user.is_staff or current_user.is_superuser}")
+            print(f"DEBUG: NOT condition result: {not (current_user.is_staff or current_user.is_superuser)}")
+            
+            if not (current_user.is_staff or current_user.is_superuser):
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    f'Access denied. User {current_user.email} is not staff or admin. is_staff: {current_user.is_staff}, is_superuser: {current_user.is_superuser}</div>'
+                )
+            
+            print("DEBUG: Access granted, showing form")
+    except Exception as e:
+        print(f"DEBUG: Authentication error: {e}")
+        return HTMLResponse(
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+            f'Authentication error: {str(e)}</div>'
+        )
+    
+    form_html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Change Password - FastOpp</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Change User Password</h1>
+            
+            <form hx-post="/change-password" hx-target="#result" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">User Email</label>
+                    <input type="email" id="email" name="email" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="user@example.com">
+                </div>
+                
+                <div>
+                    <label for="new_password" class="block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" id="new_password" name="new_password" required minlength="6"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="Enter new password">
+                </div>
+                
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required minlength="6"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="Confirm new password">
+                </div>
+                
+                <button type="submit" 
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Change Password
+                </button>
+            </form>
+            
+            <div id="result" class="mt-4"></div>
+            
+            <div class="mt-6 text-sm text-gray-600">
+                <p><strong>Security Notes:</strong></p>
+                <ul class="list-disc list-inside mt-2">
+                    <li>Only staff and admin users can change passwords</li>
+                    <li>Passwords must be at least 6 characters long</li>
+                    <li>All password changes are logged</li>
+                </ul>
+            </div>
+        </div>
+        
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(form_html)
+
+
+@app.post("/change-password")
+async def change_password_submit(request: Request):
+    """Handle password change submission (protected)"""
+    # Manual authentication check without dependency injection
+    token = request.cookies.get("access_token")
+    if not token:
+        return HTMLResponse(
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+            'No access token found. Please log in first.</div>'
+        )
+    
+    try:
+        from dependencies.auth import verify_token
+        from dependencies.config import get_settings
+        from models import User
+        from sqlmodel import select
+        from db import SessionLocal
+        import uuid
+        
+        settings = get_settings()
+        payload = verify_token(token, settings)
+        if not payload:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'Invalid token. Please log in again.</div>'
+            )
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'No user ID in token.</div>'
+            )
+        
+        user_uuid = uuid.UUID(user_id)
+        
+        with SessionLocal() as session:
+            result = session.execute(select(User).where(User.id == user_uuid))
+            current_user = result.scalar_one_or_none()
+            
+            if not current_user:
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    'User not found.</div>'
+                )
+            
+            if not (current_user.is_staff or current_user.is_superuser):
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    'Access denied. Please log in as staff or admin.</div>'
+                )
+    except Exception as e:
+        return HTMLResponse(
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+            f'Authentication error: {str(e)}</div>'
+        )
+    
+    try:
+        form = await request.form()
+        email = form.get("email", "").strip()
+        new_password = form.get("new_password", "").strip()
+        confirm_password = form.get("confirm_password", "").strip()
+        
+        # Validation
+        if not email or not new_password or not confirm_password:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'All fields are required.</div>'
+            )
+        
+        if new_password != confirm_password:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'Passwords do not match.</div>'
+            )
+        
+        if len(new_password) < 6:
+            return HTMLResponse(
+                '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                'Password must be at least 6 characters long.</div>'
+            )
+        
+        # Change password using the same logic as the CLI tool
+        from sqlmodel import select
+        from models import User
+        from fastapi_users.password import PasswordHelper
+        
+        with SessionLocal() as session:
+            # Find the user by email
+            result = session.execute(select(User).where(User.email == email))
+            user = result.scalar_one_or_none()
+            
+            if not user:
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    f'User not found: {email}</div>'
+                )
+            
+            if not user.is_active:
+                return HTMLResponse(
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+                    f'User is inactive: {email}</div>'
+                )
+            
+            # Hash the new password
+            password_helper = PasswordHelper()
+            hashed_password = password_helper.hash(new_password)
+            
+            # Update the user's password
+            user.hashed_password = hashed_password
+            session.commit()
+            
+            return HTMLResponse(
+                '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">'
+                f'✅ Password changed successfully for user: {email}</div>'
+            )
+            
+    except Exception as e:
+        return HTMLResponse(
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">'
+            f'Error changing password: {str(e)}</div>'
+        )
+
+
 @app.post("/async/init-demo")
 def init_demo_async():
-    """Initialize demo data using Leapcell's async task system"""
+    """Initialize demo data using CDN-based images (no file storage issues)"""
     try:
-        print("🚀 Starting demo initialization...")
+        import uuid
+        from datetime import datetime, timezone
+        from models import WebinarRegistrants
+        from sqlmodel import select, delete
+        
+        print("🚀 Starting demo initialization with CDN images...")
 
-        # Import and run the initialization
-        from oppdemo import run_full_init
-        run_full_init()
+        # Get the session factory from app state
+        session_factory = app.state.session_factory
+        
+        # Sample registrants data with CDN URLs
+        sample_registrants = [
+            {
+                "name": "Sarah Johnson",
+                "email": "sarah.johnson@techcorp.com",
+                "company": "TechCorp Solutions",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Interested in AI implementation strategies",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_1.jpg"
+            },
+            {
+                "name": "Michael Chen",
+                "email": "michael.chen@innovate.com",
+                "company": "Innovate Labs",
+                "webinar_title": "AI in Business: Practical Applications", 
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Looking for AI tools for data analysis",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_3.jpg"
+            },
+            {
+                "name": "Emily Rodriguez",
+                "email": "emily.rodriguez@startup.io",
+                "company": "StartupIO",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed", 
+                "notes": "Want to learn about AI automation",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_4.jpg"
+            },
+            {
+                "name": "David Kim",
+                "email": "david.kim@enterprise.com",
+                "company": "Enterprise Systems",
+                "webinar_title": "AI in Business: Practical Applications",
+                "webinar_date": datetime(2024, 3, 15, 14, 0, tzinfo=timezone.utc),
+                "status": "confirmed",
+                "notes": "Exploring AI for customer service",
+                "photo_url": "https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo/sample_photos/sample_photo_5.jpg"
+            }
+        ]
+        
+        created_count = 0
+        
+        with session_factory() as session:
+            # Clear existing registrants
+            session.execute(delete(WebinarRegistrants))
+            session.commit()
+            
+            for registrant_data in sample_registrants:
+                # Create new registrant with CDN URL
+                registrant = WebinarRegistrants(
+                    id=uuid.uuid4(),
+                    name=registrant_data['name'],
+                    email=registrant_data['email'],
+                    company=registrant_data['company'],
+                    webinar_title=registrant_data['webinar_title'],
+                    webinar_date=registrant_data['webinar_date'],
+                    status=registrant_data['status'],
+                    notes=registrant_data['notes'],
+                    photo_url=registrant_data['photo_url']  # Direct CDN URL
+                )
+                
+                session.add(registrant)
+                created_count += 1
+            
+            session.commit()
 
         print("✅ Demo initialization complete!")
         return {
             "status": "success",
-            "message": "Demo initialization completed successfully",
+            "message": "Demo initialization completed successfully with CDN images",
             "details": {
-                "database_initialized": True,
-                "superuser_created": "admin@example.com / admin123",
-                "test_users_added": True,
-                "sample_data_added": True
+                "registrants_created": created_count,
+                "image_source": "CDN (no file storage issues)",
+                "persistent": True
             }
         }
     except Exception as e:

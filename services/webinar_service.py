@@ -64,33 +64,54 @@ class WebinarService:
     @staticmethod
     def upload_photo(registrant_id: str, photo_content: bytes, filename: str) -> tuple[bool, str, Optional[str]]:
         """
-        Upload a photo for a webinar registrant
+        Upload a photo for a webinar registrant to Object Storage
         
         Returns:
             tuple: (success, message, photo_url)
         """
         try:
+            import boto3
+            from botocore.exceptions import ClientError
+            
+            # Check S3 credentials
+            s3_access_key = os.getenv("S3_ACCESS_KEY")
+            s3_secret_key = os.getenv("S3_SECRET_KEY")
+            s3_bucket = os.getenv("S3_BUCKET")
+            s3_endpoint_url = os.getenv("S3_ENDPOINT_URL", "https://objstorage.leapcell.io")
+            s3_region = os.getenv("S3_REGION", "us-east-1")
+            
+            if not all([s3_access_key, s3_secret_key, s3_bucket]):
+                return False, "S3 credentials not configured", None
+            
             # Generate unique filename
             file_extension = Path(filename).suffix if filename else '.jpg'
             unique_filename = f"{uuid.uuid4()}{file_extension}"
-            file_path = Path(os.getenv("UPLOAD_DIR", "static/uploads")) / "photos" / unique_filename
             
-            # Save file
-            with open(file_path, "wb") as buffer:
-                buffer.write(photo_content)
+            # Initialize S3 client
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key,
+                endpoint_url=s3_endpoint_url,
+                region_name=s3_region
+            )
             
-            # Update database
-            photo_url = f"/static/uploads/photos/{unique_filename}"
+            # Upload to Object Storage
+            s3_key = f"photos/{unique_filename}"
+            s3_client.put_object(
+                Bucket=s3_bucket,
+                Key=s3_key,
+                Body=photo_content,
+                ContentType='image/jpeg'
+            )
+            
+            # Generate CDN URL
+            photo_url = f"https://1xg7ah.leapcellobj.com/{s3_bucket}/{s3_key}"
             
             # Convert string to UUID
             try:
                 registrant_uuid = UUID(registrant_id)
             except ValueError:
-                # Clean up file if UUID is invalid
-                try:
-                    file_path.unlink()
-                except Exception:
-                    pass
                 return False, "Invalid registrant ID", None
             
             with SessionLocal() as session:
@@ -100,20 +121,17 @@ class WebinarService:
                 registrant = result.scalar_one_or_none()
                 
                 if not registrant:
-                    # Clean up file if registrant not found
-                    try:
-                        file_path.unlink()
-                    except Exception:
-                        pass
                     return False, "Registrant not found", None
                 
                 registrant.photo_url = photo_url
                 session.commit()
             
-            return True, "Photo uploaded successfully!", photo_url
+            return True, "Photo uploaded successfully to Object Storage!", photo_url
             
+        except ClientError as e:
+            return False, f"S3 upload failed: {str(e)}", None
         except Exception as e:
-            return False, f"Failed to save file: {str(e)}", None
+            return False, f"Failed to upload photo: {str(e)}", None
     
     @staticmethod
     def update_notes(registrant_id: str, notes: str) -> tuple[bool, str]:
