@@ -1089,19 +1089,41 @@ uv sync
 
 Create a `.env` file in your project root:
 
-**Required Environment Variables:**
+## Environment Variables
+
+### Required Variables
 
 * `DATABASE_URL`: PostgreSQL connection string (e.g., `postgresql+psycopg2://user:pass@host:port/db`)
 * `SECRET_KEY`: Secret key for JWT tokens and session management
 * `ENVIRONMENT`: Set to "development" for development mode
-* `OPENROUTER_API_KEY`: API key for OpenRouter (required for AI demo features)
 
-**Optional Environment Variables:**
+### Optional Variables
 
 * `UPLOAD_DIR`: Directory for storing uploaded files (defaults to `static/uploads` if not set)
   * **Local Development**: Not set (uses default `static/uploads`)
   * **Production Deployments**: Set to persistent storage path (e.g., `/data/uploads`, `/app/uploads`)
   * **URL Compatibility**: Files are always served from `/static/uploads/photos/` regardless of storage location
+
+* `OPENROUTER_API_KEY`: API key for OpenRouter (required for AI demo features)
+
+### LeapCell Object Storage (Optional)
+
+* `S3_ACCESS_KEY`: LeapCell Object Storage access key (**required for backup/restore**)
+* `S3_SECRET_KEY`: LeapCell Object Storage secret key (**required for backup/restore**)
+* `S3_BUCKET`: LeapCell Object Storage bucket name (**required for backup/restore**)
+* `S3_ENDPOINT_URL`: LeapCell Object Storage endpoint (default: `https://objstorage.leapcell.io`)
+* `S3_REGION`: LeapCell Object Storage region (default: `us-east-1`)
+
+**Note**: Without these environment variables, the `/admin/backup-files` and `/admin/restore-files` endpoints will return configuration errors.
+
+## Key Differences from Original FastOpp
+
+| Variable | **Original FastOpp** | **PostgreSQL Edition** | **Notes** |
+|----------|---------------------|------------------------|-----------|
+| `DATABASE_URL` | `sqlite+aiosqlite:///./test.db` | `postgresql+psycopg2://...` | **Changed**: SQLite → PostgreSQL |
+| `UPLOAD_DIR` | Not documented | `static/uploads` (default) | **Added**: Configurable file storage |
+| `S3_*` variables | Not present | Added for LeapCell | **New**: Object Storage support |
+| Database Driver | `asyncpg` (async) | `psycopg2-binary` (sync) | **Changed**: Async → Sync for serverless |
 
 #### Generate Secure SECRET_KEY
 
@@ -1134,6 +1156,51 @@ DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/fastopp_db
 SECRET_KEY=your_generated_secret_key_here
 ENVIRONMENT=development
 OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+
+### Complete .env Example
+
+**For Local Development:**
+```bash
+# Database Configuration
+DATABASE_URL=postgresql+psycopg2://username@localhost:5432/fastopp_test
+
+# Security (generate with: uv run python oppman.py secrets)
+SECRET_KEY=your_secure_secret_key_here
+
+# Environment
+ENVIRONMENT=development
+
+# File Uploads (optional - defaults to static/uploads)
+UPLOAD_DIR=static/uploads
+
+# AI Features (optional)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+
+**For LeapCell Deployment:**
+```bash
+# Database (provided by LeapCell)
+DATABASE_URL=postgresql+psycopg2://user:pass@host:port/database
+
+# Security
+SECRET_KEY=your_secure_secret_key_here
+
+# Environment
+ENVIRONMENT=production
+
+# File Uploads (LeapCell uses /tmp/)
+UPLOAD_DIR=/tmp/uploads
+
+# AI Features (optional)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# LeapCell Object Storage (optional)
+S3_ACCESS_KEY=your_leapcell_s3_access_key
+S3_SECRET_KEY=your_leapcell_s3_secret_key
+S3_BUCKET=your_leapcell_s3_bucket_name
+S3_ENDPOINT_URL=https://objstorage.leapcell.io
+S3_REGION=us-east-1
 ```
 
 **⚠️ Security Important:**
@@ -1471,12 +1538,47 @@ UPLOAD_DIR=/persistent/uploads
 # URLs served from: /static/uploads/photos/
 ```
 
+### Photo Upload Workflow
+
+**How Photo Uploads Work:**
+
+1. **Upload Process**:
+   - User uploads photo via `/webinar-registrants` page
+   - Photo is saved to `UPLOAD_DIR/photos/` (configurable via `UPLOAD_DIR` env var)
+   - Database stores photo URL as `/static/uploads/photos/{filename}`
+   - Photo is served from `/static/uploads/photos/` regardless of actual storage location
+
+2. **LeapCell Deployment**:
+   - **Storage**: Photos stored in `/tmp/uploads/photos/` (ephemeral)
+   - **Persistence**: Photos backed up to LeapCell Object Storage (S3-compatible)
+   - **Sync**: Manual backup/restore via admin endpoints
+
+3. **S3 Object Storage Integration**:
+   ```bash
+   # Backup photos to S3
+   curl -X POST https://your-app.leapcell.dev/admin/backup-files
+   
+   # Restore photos from S3
+   curl -X POST https://your-app.leapcell.dev/admin/restore-files
+   ```
+   
+   **Note**: The S3 backup/restore functions require proper environment variable configuration:
+   - Set `S3_ACCESS_KEY` and `S3_SECRET_KEY` environment variables
+   - Set `S3_BUCKET` environment variable for your Object Storage bucket
+   - Optional: Set `S3_ENDPOINT_URL` and `S3_REGION` for custom configurations
+
+4. **File Persistence Strategy**:
+   - **Local Development**: Files stored in `static/uploads/` (persistent)
+   - **LeapCell Production**: Files in `/tmp/uploads/` + S3 backup for persistence
+   - **Other Platforms**: Configurable via `UPLOAD_DIR` environment variable
+
 ### Benefits
 
 * **Environment-agnostic**: Works in any deployment environment
 * **Backward compatible**: Local development unchanged
 * **Persistent storage**: Production deployments can use persistent volumes
 * **URL consistency**: Frontend code doesn't need to change
+* **LeapCell Optimized**: Automatic S3 backup/restore for serverless persistence
 
 ## 🔄 Demo vs Minimal Mode
 
@@ -1530,13 +1632,17 @@ This version has been specifically tested and optimized for deployment on [LeapC
 ### Deployment Steps
 
 1. **Create LeapCell Project**: Set up a new project on LeapCell
-2. **Configure Environment Variables**:
+2. **Configure Environment Variables** (see [Environment Variables](#environment-variables) section above):
    ```bash
-   DATABASE_URL=postgresql+asyncpg://user:pass@host:port/db  # LeapCell provides this
+   DATABASE_URL=postgresql+psycopg2://user:pass@host:port/db  # LeapCell provides this
    SECRET_KEY=your_secure_secret_key
    ENVIRONMENT=production
-   S3_ACCESS_KEY=your_leapcell_s3_key
-   S3_SECRET_KEY=your_leapcell_s3_secret
+   UPLOAD_DIR=/tmp/uploads
+   S3_ACCESS_KEY=your_leapcell_s3_access_key
+   S3_SECRET_KEY=your_leapcell_s3_secret_key
+   S3_BUCKET=your_leapcell_s3_bucket_name
+   S3_ENDPOINT_URL=https://objstorage.leapcell.io
+   S3_REGION=us-east-1
    ```
 3. **Deploy**: Push your code to LeapCell
 4. **Initialize**: Use the `/async/init-demo` endpoint to set up the database

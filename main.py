@@ -146,7 +146,6 @@ def init_demo_async():
 @app.get("/debug/database")
 async def debug_database():
     """Debug database configuration and permissions"""
-    import os
     from pathlib import Path
     
     # Get current database configuration
@@ -163,9 +162,9 @@ async def debug_database():
         try:
             db_size = db_file.stat().st_size
             # Try to open in append mode to test write permissions
-            with open(db_file, "a") as f:
+            with open(db_file, "a"):
                 db_writable = True
-        except Exception as e:
+        except Exception:
             db_writable = False
     
     # Check directory permissions
@@ -299,6 +298,23 @@ async def backup_files():
         import boto3
         from pathlib import Path
         
+        # Check if S3 credentials are configured
+        s3_access_key = os.getenv("S3_ACCESS_KEY")
+        s3_secret_key = os.getenv("S3_SECRET_KEY")
+        s3_bucket = os.getenv("S3_BUCKET")
+        
+        if not s3_access_key or not s3_secret_key:
+            return {
+                "status": "error", 
+                "message": "S3 credentials not configured. Set S3_ACCESS_KEY and S3_SECRET_KEY environment variables."
+            }
+        
+        if not s3_bucket:
+            return {
+                "status": "error",
+                "message": "S3 bucket not configured. Set S3_BUCKET environment variable."
+            }
+        
         # Get upload directory
         settings = get_settings()
         upload_dir = Path(settings.upload_dir)
@@ -309,13 +325,12 @@ async def backup_files():
         # Initialize S3 client
         s3 = boto3.client(
             "s3",
-            region_name="us-east-1",
-            endpoint_url="https://objstorage.leapcell.io",
-            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "cf0742f423bd4c3f9932c54cb97315fb"),
-            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "******")
+            region_name=os.getenv("S3_REGION", "us-east-1"),
+            endpoint_url=os.getenv("S3_ENDPOINT_URL", "https://objstorage.leapcell.io"),
+            aws_access_key_id=s3_access_key,
+            aws_secret_access_key=s3_secret_key
         )
         
-        bucket_name = "os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo"
         files_backed_up = 0
         
         # Backup all files in upload directory
@@ -328,7 +343,7 @@ async def backup_files():
                 # Upload file to Object Storage
                 with open(file_path, "rb") as f:
                     s3.put_object(
-                        Bucket=bucket_name,
+                        Bucket=s3_bucket,
                         Key=str(s3_key),
                         Body=f
                     )
@@ -337,7 +352,7 @@ async def backup_files():
         return {
             "status": "success",
             "message": f"Backed up {files_backed_up} files to Object Storage",
-            "bucket": bucket_name,
+            "bucket": s3_bucket,
             "files_count": files_backed_up
         }
         
@@ -356,6 +371,23 @@ async def restore_files():
         import boto3
         from pathlib import Path
         
+        # Check if S3 credentials are configured
+        s3_access_key = os.getenv("S3_ACCESS_KEY")
+        s3_secret_key = os.getenv("S3_SECRET_KEY")
+        s3_bucket = os.getenv("S3_BUCKET")
+        
+        if not s3_access_key or not s3_secret_key:
+            return {
+                "status": "error", 
+                "message": "S3 credentials not configured. Set S3_ACCESS_KEY and S3_SECRET_KEY environment variables."
+            }
+        
+        if not s3_bucket:
+            return {
+                "status": "error",
+                "message": "S3 bucket not configured. Set S3_BUCKET environment variable."
+            }
+        
         # Get upload directory
         settings = get_settings()
         upload_dir = Path(settings.upload_dir)
@@ -364,18 +396,17 @@ async def restore_files():
         # Initialize S3 client
         s3 = boto3.client(
             "s3",
-            region_name="us-east-1",
-            endpoint_url="https://objstorage.leapcell.io",
-            aws_access_key_id=os.getenv("S3_ACCESS_KEY", "cf0742f423bd4c3f9932c54cb97315fb"),
-            aws_secret_access_key=os.getenv("S3_SECRET_KEY", "******")
+            region_name=os.getenv("S3_REGION", "us-east-1"),
+            endpoint_url=os.getenv("S3_ENDPOINT_URL", "https://objstorage.leapcell.io"),
+            aws_access_key_id=s3_access_key,
+            aws_secret_access_key=s3_secret_key
         )
         
-        bucket_name = "os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo"
         files_restored = 0
         
         # List objects in Object Storage
         response = s3.list_objects_v2(
-            Bucket=bucket_name,
+            Bucket=s3_bucket,
             Prefix="uploads/"
         )
         
@@ -385,7 +416,7 @@ async def restore_files():
                 continue  # Skip directories
             
             # Download file from Object Storage
-            file_response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+            file_response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
             
             # Create local file path
             relative_path = s3_key.replace("uploads/", "")
