@@ -509,6 +509,364 @@ async def chat_with_llm(request: Request):
 **The Bottom Line:**
 Django 6.0's Background Tasks significantly narrows the gap, but FastOpp remains the better choice for serverless deployments and real-time LLM applications, while Django 6.0 becomes excellent for traditional web applications with background LLM processing.
 
+### Long-Running Database Queries: A Critical Consideration
+
+**Complex database queries can take 10+ seconds** and significantly impact the sync vs async decision:
+
+#### **The Problem with Long Database Queries**
+
+**Common Scenarios:**
+- **Complex JOINs**: Multiple tables with large datasets
+- **Analytics Queries**: Aggregations across millions of records
+- **Data Processing**: ETL operations, data transformations
+- **Reporting**: Complex business intelligence queries
+
+**Example: E-commerce Analytics Dashboard**
+```sql
+-- Complex query: "Top 1000 products by revenue with customer demographics"
+SELECT p.name, p.price, SUM(o.quantity) as total_sold,
+       AVG(c.age) as avg_customer_age, COUNT(DISTINCT o.customer_id) as unique_customers
+FROM products p
+JOIN order_items oi ON p.id = oi.product_id
+JOIN orders o ON oi.order_id = o.id
+JOIN customers c ON o.customer_id = c.id
+WHERE o.created_at >= '2024-01-01'
+GROUP BY p.id, p.name, p.price
+ORDER BY total_sold DESC
+LIMIT 1000
+```
+
+#### **Synchronous Database (Current FastOpp) - The Problem**
+
+**❌ Major Limitation:**
+```python
+# FastOpp (Sync) - BLOCKS the entire request
+def get_analytics_report():
+    # This query takes 10+ seconds
+    result = session.execute(complex_analytics_query)
+    return result.scalars().all()
+
+async def analytics_endpoint(request: Request):
+    # This blocks the entire FastAPI process for 10+ seconds
+    data = get_analytics_report()  # 10+ second wait
+    return JSONResponse({'data': data})
+```
+
+**Problems with Sync Approach:**
+- **Blocks FastAPI**: Entire server process is blocked
+- **No Concurrency**: Other requests must wait
+- **Timeout Risk**: Serverless platforms may timeout
+- **Poor User Experience**: 10+ second response times
+- **Resource Waste**: Server idle while waiting for database
+
+#### **Asynchronous Database (Original FastOpp) - Better for Long Queries**
+
+**✅ Non-blocking Approach:**
+```python
+# Original FastOpp (Async) - NON-BLOCKING
+async def get_analytics_report():
+    # This query takes 10+ seconds but doesn't block other requests
+    result = await session.execute(complex_analytics_query)
+    return result.scalars().all()
+
+async def analytics_endpoint(request: Request):
+    # Other requests can be processed while this waits
+    data = await get_analytics_report()  # 10+ second wait, but non-blocking
+    return JSONResponse({'data': data})
+```
+
+**Benefits of Async Approach:**
+- **Non-blocking**: Other requests can be processed
+- **Concurrency**: Multiple long queries can run simultaneously
+- **Better UX**: Server remains responsive
+- **Serverless Friendly**: Works better with timeout limits
+- **Resource Efficiency**: Server can handle other requests
+
+#### **Query Performance Impact Matrix**
+
+| Query Type | **Sync (Current FastOpp)** | **Async (Original FastOpp)** | **Background Tasks** |
+|------------|---------------------------|------------------------------|---------------------|
+| **Simple Queries** (< 100ms) | ✅ Perfect | ✅ Perfect | ❌ Overkill |
+| **Medium Queries** (100ms-1s) | ✅ Good | ✅ Good | ❌ Overkill |
+| **Long Queries** (1-10s) | ❌ Blocks server | ✅ Non-blocking | ✅ Best |
+| **Very Long Queries** (10s+) | ❌ Timeout risk | ❌ Timeout risk | ✅ Essential |
+
+#### **Better Solutions for Long Queries**
+
+**1. Background Tasks (Recommended for 10s+ queries):**
+```python
+# FastOpp could implement background tasks
+@task
+def generate_analytics_report():
+    result = session.execute(complex_analytics_query)
+    return result.scalars().all()
+
+async def analytics_endpoint(request: Request):
+    task = generate_analytics_report.enqueue()
+    return JSONResponse({'task_id': task.id, 'status': 'processing'})
+```
+
+**2. Caching Strategy:**
+```python
+# Cache expensive queries
+@cache(ttl=3600)  # Cache for 1 hour
+def get_analytics_report():
+    result = session.execute(complex_analytics_query)
+    return result.scalars().all()
+```
+
+**3. Database Optimization:**
+```python
+# Optimize the query itself
+def get_analytics_report_optimized():
+    # Use materialized views, indexes, query optimization
+    result = session.execute(optimized_query)
+    return result.scalars().all()
+```
+
+**4. Query Timeout Handling:**
+```python
+# Add timeout protection
+def get_analytics_report_with_timeout():
+    try:
+        result = session.execute(complex_query, timeout=30)
+        return result.scalars().all()
+    except TimeoutError:
+        # Fallback to cached data or simplified query
+        return get_cached_analytics_data()
+```
+
+#### **Updated FastOpp vs Django Comparison**
+
+**For Applications with Complex Database Queries:**
+
+| Aspect | **FastOpp (Sync)** | **FastOpp (Async)** | **Django 6.0** |
+|--------|-------------------|-------------------|----------------|
+| **Simple Queries** | ✅ Excellent | ✅ Excellent | ✅ Excellent |
+| **Long Queries** | ❌ Blocks server | ✅ Non-blocking | ✅ Background tasks |
+| **Serverless** | ❌ Timeout risk | ✅ Better | ❌ Workers needed |
+| **Real-time** | ❌ Poor UX | ✅ Good | ❌ Polling required |
+| **Complexity** | ✅ Simple | ⚠️ Moderate | ⚠️ Moderate |
+
+#### **Recommendations by Use Case**
+
+**Choose Current FastOpp (Sync) When:**
+- **Simple Applications**: Basic CRUD operations
+- **Fast Queries**: All queries under 1 second
+- **Serverless Deployment**: LeapCell, Vercel, Netlify
+- **Educational Projects**: Learning FastAPI patterns
+
+**Consider Reverting to Async When:**
+- **Analytics Applications**: Complex reporting queries
+- **Data Processing**: ETL operations
+- **High Concurrency**: Multiple users with long queries
+- **Performance Critical**: Need non-blocking database operations
+
+**Consider Background Tasks When:**
+- **Very Long Queries**: 10+ second database operations
+- **Batch Processing**: Large data transformations
+- **User Can Wait**: Polling/WebSocket acceptable
+- **Dedicated Infrastructure**: Can run background workers
+
+#### **The Honest Assessment**
+
+**Long database queries (10+ seconds) are a significant consideration that favors async database operations.** The current FastOpp's sync approach works well for simple queries but has limitations for complex analytics and reporting queries.
+
+**For applications with complex database queries, consider:**
+1. **Reverting to async database operations** for the query layer
+2. **Adding background task support** for long-running queries
+3. **Implementing query optimization** strategies
+4. **Using caching** for expensive queries
+5. **Adding timeout protection** for query safety
+
+**This is a valid concern that could influence the sync vs async decision** and should be considered when choosing between FastOpp's current sync approach and the original async approach.
+
+### Database Concurrency: What Actually Happens with Multiple Users
+
+**A common misconception**: People think that with synchronous database access, users have to wait in a queue for each query to complete. **This is not true!**
+
+#### **Connection Pooling Solves the Queue Problem**
+
+**You don't have to wait in a queue!** SQLAlchemy with psycopg2 creates a connection pool:
+
+```python
+# SQLAlchemy with psycopg2 creates a connection pool
+engine = create_engine(
+    "postgresql+psycopg2://...",
+    pool_size=20,        # 20 concurrent connections
+    max_overflow=30,     # Up to 30 additional connections
+    pool_timeout=30,     # Wait max 30 seconds for connection
+    pool_recycle=3600    # Recycle connections every hour
+)
+```
+
+**What this means:**
+- **20 people can query simultaneously** without waiting
+- **Up to 50 total connections** (20 + 30 overflow) if needed
+- **No queuing** until you exceed 50 concurrent users
+
+#### **Real-World Example: 100 Users, 10-Second Queries**
+
+Let's say you have 100 users trying to run 10-second analytics queries simultaneously:
+
+**What actually happens:**
+1. **First 20 users**: Get connections immediately, start their 10-second queries
+2. **Users 21-50**: Get overflow connections, start their queries
+3. **Users 51-100**: Wait in queue for a connection to become available
+4. **After 10 seconds**: First batch finishes, connections become available
+5. **Users 51-70**: Get connections, start their queries
+6. **And so on...**
+
+**Timeline:**
+```
+Time 0s:  Users 1-50 start queries
+Time 10s: Users 1-50 finish, users 51-70 start
+Time 20s: Users 51-70 finish, users 71-90 start
+Time 30s: Users 71-90 finish, users 91-100 start
+Time 40s: All users complete
+```
+
+#### **The Critical Difference: What Else Can Happen**
+
+**Sync Database (Current FastOpp):**
+```python
+# While 50 users are running 10-second queries...
+async def get_user_profile(user_id: int):
+    # This ALSO has to wait for a database connection!
+    with SessionLocal() as session:
+        return session.get(User, user_id)
+```
+
+**Problem**: Even simple 100ms queries have to wait for connections occupied by 10-second queries.
+
+**Async Database (Original FastOpp):**
+```python
+# While 50 users are running 10-second queries...
+async def get_user_profile(user_id: int):
+    # This can get a connection and complete in 100ms
+    async with AsyncSessionLocal() as session:
+        return await session.get(User, user_id)
+```
+
+**Benefit**: Simple queries don't get blocked by long-running queries.
+
+#### **Connection Pool Exhaustion: The Real Bottleneck**
+
+Here's what happens when you exceed your connection pool:
+
+```python
+# Connection pool settings
+pool_size=20
+max_overflow=30
+# Total: 50 concurrent connections
+
+# What happens with 100 concurrent users:
+# - Users 1-50: Get connections, start queries
+# - Users 51-100: Wait in queue (pool_timeout=30 seconds)
+# - If timeout exceeded: ConnectionError
+```
+
+#### **Practical Solutions for High Concurrency**
+
+**1. Increase Connection Pool Size:**
+```python
+engine = create_engine(
+    "postgresql+psycopg2://...",
+    pool_size=50,        # More concurrent connections
+    max_overflow=100,    # More overflow capacity
+    pool_timeout=60      # Longer timeout
+)
+```
+
+**2. Use Celery for Long Queries (Recommended):**
+```python
+# FastAPI endpoint - returns immediately
+async def analytics_endpoint(request: Request):
+    task = process_analytics.delay(filters)
+    return JSONResponse({'task_id': task.id})
+
+# Celery worker - runs in background
+@celery_app.task
+def process_analytics(filters):
+    with SessionLocal() as session:
+        result = session.execute(complex_query)  # 10 seconds
+        return result
+```
+
+**Benefits:**
+- **No connection pool exhaustion** for web server
+- **Web server stays responsive** for other requests
+- **Celery workers** handle the heavy database work
+- **Better resource management**
+
+**3. Database Connection Limits:**
+```sql
+-- Check current connection limit
+SHOW max_connections;  -- Usually 100-200 by default
+
+-- Check current connections
+SELECT count(*) FROM pg_stat_activity;
+```
+
+#### **The Honest Answer: What Actually Happens**
+
+**With 100 users and 10-second queries:**
+
+1. **First 20-50 users**: Start immediately (connection pool size)
+2. **Remaining users**: Wait in queue for connections
+3. **Web server**: May become unresponsive if all connections are busy
+4. **Database**: Handles concurrent queries well (PostgreSQL is designed for this)
+5. **User experience**: First batch gets results in 10s, others wait longer
+
+**The real bottleneck is usually:**
+- **Connection pool size** (not database performance)
+- **Web server resources** (memory, CPU)
+- **Network latency** (especially with cloud databases)
+
+#### **Best Practice Recommendation for FastOpp + LeapCell**
+
+```python
+# 1. Optimize connection pool for your expected load
+engine = create_engine(
+    "postgresql+psycopg2://...",
+    pool_size=20,        # Adjust based on expected concurrent users
+    max_overflow=30,     # Allow burst capacity
+    pool_timeout=30,     # Reasonable timeout
+    pool_recycle=3600    # Prevent stale connections
+)
+
+# 2. Use Celery for long queries
+@celery_app.task
+def long_analytics_query(filters):
+    with SessionLocal() as session:
+        return session.execute(complex_query).scalars().all()
+
+# 3. Keep sync database for fast queries
+def get_user_data(user_id):
+    with SessionLocal() as session:
+        return session.get(User, user_id)
+```
+
+**This gives you:**
+- **Responsive web server** for fast operations
+- **Scalable background processing** for heavy operations
+- **Efficient connection usage** without pool exhaustion
+- **Better user experience** overall
+
+**The key insight**: Connection pooling handles concurrency well, but long-running queries can still block your web server - which is why Celery is often the better solution for heavy database operations.
+
+## Attribution
+
+This project is a modified version of the original [FastOpp](https://github.com/Oppkey/FastOpp) project by [Oppkey](https://oppkey.com/). 
+
+**Key Modifications:**
+- **Database**: Switched from SQLite to PostgreSQL for better scalability
+- **Architecture**: Converted to synchronous database operations for serverless compatibility
+- **Deployment**: Optimized for LeapCell serverless platform
+- **Education**: Enhanced documentation and tutorials for student learning
+
+**Original FastOpp**: [https://github.com/Oppkey/FastOpp](https://github.com/Oppkey/FastOpp)
+
 ## Overview
 
 Although both Django and Flask can absolutely be used for complex AI
@@ -665,6 +1023,24 @@ FastOpp comes with an optional basic UI design system to accelerate AI applicati
 
 ## 🚀 Quick Start (For Students)
 
+### Option 1: LeapCell Deployment (Recommended)
+
+**Perfect for students** - Free serverless hosting with PostgreSQL:
+
+1. **Fork this repository** on GitHub
+2. **Deploy to LeapCell**:
+   - Go to [leapcell.io](https://leapcell.io/)
+   - Create new project
+   - Connect your GitHub repository
+   - Set environment variables (see [DEPLOYMENT.md](DEPLOYMENT.md))
+   - Deploy and initialize database
+
+3. **Access your app**: `https://your-app.leapcell.dev/`
+
+### Option 2: Local Development
+
+**For learning and development**:
+
 ### Prerequisites
 
 * Python 3.12+
@@ -672,8 +1048,16 @@ FastOpp comes with an optional basic UI design system to accelerate AI applicati
   and install the newest 3.12.x with pyenv. Although the latest stable Python is 3.13.7, we're using 3.12.x
   right now for maximum package compatibility.
 * [uv](https://docs.astral.sh/uv/) package manager
+* PostgreSQL (local installation)
 
-## What you’ll do
+## Educational Resources
+
+- **📚 [Deployment Guide](DEPLOYMENT.md)**: Complete deployment instructions for all platforms
+- **🤝 [Contributing Guide](CONTRIBUTING.md)**: How to contribute and learn from the codebase
+- **🎓 [LeapCell Tutorial](DEPLOYMENT.md#leapcell-deployment)**: Step-by-step student deployment guide
+- **🔧 [Local Development](DEPLOYMENT.md#local-development)**: Set up your development environment
+
+## What you'll do
 
 Use this guide to create your own repo from the FastOpp template, develop independently, and deploy. Do not open pull requests to the FastOpp repo.
 
