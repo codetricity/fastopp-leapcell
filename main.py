@@ -500,6 +500,55 @@ async def backup_files():
         }
 
 
+@app.get("/api/debug-s3-objects")
+async def debug_s3_objects():
+    """Debug what objects are in the S3 bucket"""
+    try:
+        import boto3
+        from botocore.exceptions import ClientError
+        
+        # Initialize S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        # List all objects in the bucket
+        try:
+            response = s3_client.list_objects_v2(Bucket=settings.s3_bucket)
+            objects = response.get('Contents', [])
+            
+            return {
+                "status": "success",
+                "bucket": settings.s3_bucket,
+                "object_count": len(objects),
+                "objects": [
+                    {
+                        "key": obj['Key'],
+                        "size": obj['Size'],
+                        "last_modified": obj['LastModified'].isoformat()
+                    }
+                    for obj in objects
+                ]
+            }
+        except ClientError as e:
+            return {
+                "status": "error",
+                "message": f"Failed to list objects: {str(e)}",
+                "error_code": e.response.get('Error', {}).get('Code', 'Unknown')
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to debug S3 objects: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.get("/api/debug-s3-connection")
 async def debug_s3_connection():
     """Debug S3 connection and credentials"""
