@@ -500,6 +500,47 @@ async def backup_files():
         }
 
 
+@app.get("/api/debug-s3-download/{key}")
+async def debug_s3_download(key: str):
+    """Debug downloading a specific S3 object"""
+    try:
+        import boto3
+        from botocore.exceptions import ClientError
+        
+        # Initialize S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        try:
+            # Try to get the object
+            response = s3_client.get_object(Bucket=settings.s3_bucket, Key=key)
+            return {
+                "status": "success",
+                "key": key,
+                "size": response['ContentLength'],
+                "content_type": response.get('ContentType', 'unknown')
+            }
+        except ClientError as e:
+            return {
+                "status": "error",
+                "key": key,
+                "error": str(e),
+                "error_code": e.response.get('Error', {}).get('Code', 'Unknown')
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to debug S3 download: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.get("/api/debug-s3-objects")
 async def debug_s3_objects():
     """Debug what objects are in the S3 bucket"""
