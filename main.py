@@ -1269,14 +1269,17 @@ async def restore_files():
         
         # List objects in Object Storage
         response = s3.list_objects_v2(
-            Bucket=s3_bucket,
-            Prefix="sample_photos%2F"
+            Bucket=s3_bucket
         )
         
         for obj in response.get("Contents", []):
             s3_key = obj["Key"]
             if s3_key.endswith("/"):
                 continue  # Skip directories
+            
+            # Only process sample_photos files
+            if not s3_key.startswith("sample_photos"):
+                continue
             
             # Download file from Object Storage
             file_response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
