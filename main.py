@@ -455,11 +455,9 @@ async def change_password_submit(request: Request):
 
 @app.post("/async/init-demo")
 def init_demo_async():
-    """Initialize demo data using CDN-based images and copy sample photos to photos directory"""
+    """Initialize demo data using CDN-based images (no local file copying needed)"""
     try:
         import uuid
-        import shutil
-        from pathlib import Path
         from datetime import datetime, timezone
         from models import WebinarRegistrants
         from sqlmodel import select, delete
@@ -469,54 +467,9 @@ def init_demo_async():
         # Get the session factory from app state
         session_factory = app.state.session_factory
         
-        # Copy sample photos to photos directory
-        print("📸 Copying sample photos to photos directory...")
-        upload_dir = Path(settings.upload_dir)
-        
-        # Try multiple possible locations for sample_photos
-        possible_sample_dirs = [
-            upload_dir / "sample_photos",  # /tmp/uploads/sample_photos
-            Path("/sample_photos"),        # /sample_photos (root level)
-            Path("./sample_photos"),       # ./sample_photos (relative)
-        ]
-        
-        sample_photos_dir = None
-        for dir_path in possible_sample_dirs:
-            if dir_path.exists():
-                sample_photos_dir = dir_path
-                print(f"  📁 Found sample_photos at: {dir_path}")
-                break
-        
-        if not sample_photos_dir:
-            print("  ❌ No sample_photos directory found in any expected location")
-            return {
-                "status": "error",
-                "message": "Sample photos directory not found",
-                "details": {
-                    "searched_paths": [str(p) for p in possible_sample_dirs],
-                    "upload_dir": str(upload_dir)
-                }
-            }
-        
-        photos_dir = upload_dir / "photos"
-        photos_dir.mkdir(parents=True, exist_ok=True)
-        
+        # No need to copy sample photos - using CDN URLs directly
+        print("📸 Using CDN URLs for sample photos (no local file copying needed)")
         copied_count = 0
-        if sample_photos_dir.exists():
-            for sample_file in sample_photos_dir.glob("*.jpg"):
-                # Generate unique filename to avoid conflicts
-                unique_filename = f"{uuid.uuid4()}_{sample_file.name}"
-                dest_path = photos_dir / unique_filename
-                
-                # Copy the file
-                shutil.copy2(sample_file, dest_path)
-                copied_count += 1
-                print(f"  ✅ Copied {sample_file.name} to {unique_filename}")
-        
-        print(f"📸 Copied {copied_count} sample photos to photos directory")
-        
-        # Get list of copied photos for registrants
-        copied_photos = list(photos_dir.glob("*.jpg"))
         
         # Sample registrants data with CDN photo URLs (no local storage needed)
         sample_registrants = [
