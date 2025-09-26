@@ -262,6 +262,7 @@ async def debug_settings():
     upload_dir = Path(settings.upload_dir)
     upload_dir_exists = upload_dir.exists()
     photos_dir_exists = (upload_dir / "photos").exists()
+    sample_photos_dir_exists = (upload_dir / "sample_photos").exists()
     
     # Count files in photos directory
     photo_count = 0
@@ -271,6 +272,14 @@ async def debug_settings():
         except Exception:
             photo_count = "error"
     
+    # Count files in sample_photos directory
+    sample_photo_count = 0
+    if sample_photos_dir_exists:
+        try:
+            sample_photo_count = len(list((upload_dir / "sample_photos").glob("*")))
+        except Exception:
+            sample_photo_count = "error"
+    
     # List some sample files
     sample_files = []
     if photos_dir_exists:
@@ -279,12 +288,23 @@ async def debug_settings():
         except Exception:
             sample_files = ["error_reading_files"]
     
+    # List sample photos
+    sample_photos_files = []
+    if sample_photos_dir_exists:
+        try:
+            sample_photos_files = [f.name for f in (upload_dir / "sample_photos").glob("*")[:5]]
+        except Exception:
+            sample_photos_files = ["error_reading_sample_photos"]
+    
     return {
         "upload_dir": settings.upload_dir,
         "upload_dir_exists": upload_dir_exists,
         "photos_dir_exists": photos_dir_exists,
+        "sample_photos_dir_exists": sample_photos_dir_exists,
         "photo_count": photo_count,
+        "sample_photo_count": sample_photo_count,
         "sample_files": sample_files,
+        "sample_photos_files": sample_photos_files,
         "environment": settings.environment,
         "static_mounts": {
             "general_static": "/static",
@@ -292,6 +312,7 @@ async def debug_settings():
         },
         "expected_photo_urls": "/static/uploads/photos/",
         "actual_photo_path": str(upload_dir / "photos") if upload_dir_exists else "not_found",
+        "sample_photos_path": str(upload_dir / "sample_photos") if upload_dir_exists else "not_found",
         "test_urls": [
             f"/static/uploads/photos/{f}" for f in sample_files[:3]
         ]
@@ -477,6 +498,77 @@ async def backup_files():
         return {
             "status": "error",
             "message": f"Backup failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
+@app.post("/api/download-sample-photos")
+async def download_sample_photos():
+    """Download sample photos from Unsplash"""
+    try:
+        import requests
+        from pathlib import Path
+        
+        # Sample photos from Unsplash
+        sample_photos = [
+            {
+                "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+                "filename": "john_smith.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=face",
+                "filename": "sarah_johnson.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+                "filename": "michael_chen.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
+                "filename": "emily_davis.jpg"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face",
+                "filename": "david_wilson.jpg"
+            }
+        ]
+        
+        # Setup directories
+        upload_dir = Path(settings.upload_dir)
+        sample_photos_dir = upload_dir / "sample_photos"
+        sample_photos_dir.mkdir(parents=True, exist_ok=True)
+        
+        downloaded_count = 0
+        
+        for photo in sample_photos:
+            filename = sample_photos_dir / photo["filename"]
+            
+            if filename.exists():
+                continue
+                
+            try:
+                response = requests.get(photo["url"], timeout=10)
+                response.raise_for_status()
+                
+                with open(filename, "wb") as f:
+                    f.write(response.content)
+                
+                downloaded_count += 1
+                
+            except Exception as e:
+                print(f"Failed to download {photo['filename']}: {e}")
+        
+        return {
+            "status": "success",
+            "message": f"Downloaded {downloaded_count} sample photos",
+            "downloaded_count": downloaded_count,
+            "sample_photos_dir": str(sample_photos_dir)
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to download sample photos: {str(e)}",
             "error_type": type(e).__name__
         }
 
