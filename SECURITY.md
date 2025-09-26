@@ -42,8 +42,10 @@ X-Frame-Options: DENY
 X-XSS-Protection: 1; mode=block
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: geolocation=(), microphone=(), camera=()
-Content-Security-Policy: [configured for educational use]
+Content-Security-Policy: [configured for educational use with CDN support]
 ```
+
+**Note**: The CSP allows CDN resources (Tailwind CSS, Chart.js, etc.) for educational purposes. In production, these should be bundled locally.
 
 ## Production Deployment Security
 

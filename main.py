@@ -18,11 +18,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         # Content Security Policy
+        # Note: CDN usage is for educational purposes - in production, bundle these assets locally
         csp = (
             "default-src 'self'; "
             "img-src 'self' data: https:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
             "font-src 'self' data:; "
             "connect-src 'self' https:; "
             "frame-ancestors 'none';"

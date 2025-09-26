@@ -45,7 +45,7 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * `DATABASE_URL`: Paste the PostgreSQL connection string from Step 2
 * `SECRET_KEY`: Generate a strong secret key (use `uv run python oppman.py secrets` locally)
 * `ENVIRONMENT`: Set to `production`
-* `UPLOAD_DIR`: Set to `/tmp/uploads`
+* `UPLOAD_DIR`: Set to `/tmp/uploads` (required for LeapCell compatibility)
 
 #### S3 Object Storage Variables:
 * `S3_ACCESS_KEY`: Paste the Access Key ID from Step 3
@@ -69,6 +69,9 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * Once your application is deployed and running, find its public URL (e.g., `https://your-app.leapcell.dev/`)
 * Open your terminal and run the following curl command to trigger the full demo initialization:
 
+```bash
+curl -X POST https://your-app.leapcell.dev/async/init-demo
+```
 
 * Monitor your LeapCell project logs for the initialization progress
 
@@ -79,35 +82,22 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * Check the `/debug/database-data` endpoint to verify database tables are populated
 * Test the health check endpoint: `https://your-app.leapcell.dev/kaithheathcheck`
 
-### 8. Test Image Handling (Choose One Approach)
+### 8. Test Image Handling
 
-#### Option A: CDN-Based Images (Recommended)
-* **Create registrants with CDN photo URLs** (bypasses file storage issues):
+* **Create registrants with CDN photo URLs** (images stored directly in object storage):
   ```bash
   curl -X POST https://your-app.leapcell.dev/api/create-registrants-with-cdn
   ```
-* **Benefits**: No file storage issues, images served from CDN, simpler deployment
-
-#### Option B: S3 Object Storage (Traditional)
-* **Backup photos to S3**:
-  ```bash
-  curl -X POST https://your-app.leapcell.dev/api/backup-files
-  ```
-* **Restore photos from S3**:
-  ```bash
-  curl -X POST https://your-app.leapcell.dev/api/restore-files
-  ```
-* **Benefits**: Full control over file storage, traditional approach
+* **Benefits**: Images stored directly in object storage, no local file storage needed, CDN delivery
 
 ## Troubleshooting
 
 ### Common Issues:
 
 * **Database Connection Errors**: Check that `DATABASE_URL` is correctly formatted
-* **S3 Backup/Restore Fails**: Verify all S3 environment variables are set correctly
+* **S3 Configuration Issues**: Verify all S3 environment variables are set correctly for object storage
 * **Initialization Timeout**: Check deployment logs for database connection issues
-* **File Upload Issues**: Ensure `UPLOAD_DIR` is set to `/tmp/uploads`
-* **Missing Images**: Use CDN-based approach (`/api/create-registrants-with-cdn`) to bypass file storage issues
+* **Missing Images**: Use CDN-based approach (`/api/create-registrants-with-cdn`) for image handling
 * **Browser Security Warnings**: These are false positives - bypass browser warnings to access the site
 * **Security Headers**: The application includes comprehensive security headers to prevent false positive warnings:
   - `X-Content-Type-Options: nosniff`
