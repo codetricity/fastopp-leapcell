@@ -35,6 +35,7 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
   * `Bucket Name` (e.g., `os-wsp1971045591851880448-xxxx-xxxx-xxxx`)
   * `Access Key ID` (e.g., `cf0742f423bd4c3f9932c54cb97315fb`)
   * `Secret Access Key` (e.g., `your-secret-key-here`)
+* **Important**: Look for the "Access Your Files via CDN" section and **copy the CDN Base URL** (e.g., `https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo`)
 
 ### 4. Configure Environment Variables
 
@@ -53,6 +54,9 @@ This tutorial provides step-by-step instructions for deploying the FastOpp Postg
 * `S3_BUCKET`: Paste the Bucket Name from Step 3
 * `S3_ENDPOINT_URL`: Paste the Endpoint from Step 3
 * `S3_REGION`: Paste the Region from Step 3
+* `S3_CDN_URL`: Copy the **CDN Base URL** from your LeapCell Object Storage dashboard
+  * **How to find it**: Go to your LeapCell project → Object Storage → Look for "Access Your Files via CDN" section
+  * **Copy the full URL** (it will look like `https://1xg7ah.leapcellobj.com/os-wsp1971045591851880448-7pnx-ydu3-a6mpnppo`)
 
 #### Optional Variables:
 * `OPENROUTER_API_KEY`: (Optional) Your OpenRouter API key for AI features
@@ -98,6 +102,7 @@ curl -X POST https://your-app.leapcell.dev/async/init-demo
 * **S3 Configuration Issues**: Verify all S3 environment variables are set correctly for object storage
 * **Initialization Timeout**: Check deployment logs for database connection issues
 * **Missing Images**: Use CDN-based approach (`/api/create-registrants-with-cdn`) for image handling
+* **Image Upload 403 Errors**: Make sure `S3_CDN_URL` is set to the CDN Base URL from your LeapCell dashboard
 * **Browser Security Warnings**: These are false positives - bypass browser warnings to access the site
 * **Security Headers**: The application includes comprehensive security headers to prevent false positive warnings:
   - `X-Content-Type-Options: nosniff`

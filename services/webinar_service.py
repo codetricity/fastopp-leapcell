@@ -106,7 +106,14 @@ class WebinarService:
             )
             
             # Generate CDN URL using the user's S3 bucket
-            photo_url = f"https://objstorage.leapcell.io/{s3_bucket}/{s3_key}"
+            # For LeapCell, the CDN URL format is: https://{account_id}.leapcellobj.com/{bucket}/{key}
+            # Try to get CDN URL from environment variable, otherwise construct it
+            cdn_base_url = os.getenv("S3_CDN_URL")
+            if cdn_base_url:
+                photo_url = f"{cdn_base_url}/{s3_bucket}/{s3_key}"
+            else:
+                # Fallback: use the S3 endpoint URL (may not work for CDN)
+                photo_url = f"{s3_endpoint_url}/{s3_bucket}/{s3_key}"
             
             # Convert string to UUID
             try:
