@@ -1270,7 +1270,7 @@ async def restore_files():
         # List objects in Object Storage
         response = s3.list_objects_v2(
             Bucket=s3_bucket,
-            Prefix="sample_photos/"
+            Prefix="sample_photos%2F"
         )
         
         for obj in response.get("Contents", []):
@@ -1282,7 +1282,8 @@ async def restore_files():
             file_response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
             
             # Create local file path
-            relative_path = s3_key.replace("sample_photos/", "sample_photos/")
+            # Convert URL-encoded key to normal path
+            relative_path = s3_key.replace("sample_photos%2F", "sample_photos/")
             local_file_path = upload_dir / relative_path
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
             
