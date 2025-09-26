@@ -500,6 +500,65 @@ async def backup_files():
         }
 
 
+@app.get("/api/test-restore-single")
+async def test_restore_single():
+    """Test restoring a single file to debug the issue"""
+    try:
+        import boto3
+        from pathlib import Path
+        
+        # Get upload directory
+        settings = get_settings()
+        upload_dir = Path(settings.upload_dir)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize S3 client
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        # Try to download the first sample photo
+        s3_key = "sample_photos%2Fsample_photo_1.jpg"
+        
+        try:
+            # Download file from Object Storage
+            file_response = s3.get_object(Bucket=settings.s3_bucket, Key=s3_key)
+            
+            # Create local file path
+            relative_path = s3_key.replace("sample_photos%2F", "sample_photos/")
+            local_file_path = upload_dir / relative_path
+            local_file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Save file locally
+            with open(local_file_path, "wb") as f:
+                f.write(file_response["Body"].read())
+            
+            return {
+                "status": "success",
+                "message": f"Successfully downloaded {s3_key}",
+                "local_path": str(local_file_path),
+                "file_size": local_file_path.stat().st_size
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Failed to download {s3_key}: {str(e)}",
+                "error_type": type(e).__name__
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to test restore: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.get("/api/debug-s3-download/{key}")
 async def debug_s3_download(key: str):
     """Debug downloading a specific S3 object"""
