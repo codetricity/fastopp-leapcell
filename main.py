@@ -500,6 +500,58 @@ async def backup_files():
         }
 
 
+@app.get("/api/debug-s3-connection")
+async def debug_s3_connection():
+    """Debug S3 connection and credentials"""
+    try:
+        import boto3
+        from botocore.exceptions import ClientError
+        
+        # Check S3 credentials
+        if not all([settings.s3_access_key, settings.s3_secret_key, settings.s3_bucket]):
+            return {
+                "status": "error",
+                "message": "S3 credentials not configured",
+                "s3_access_key": bool(settings.s3_access_key),
+                "s3_secret_key": bool(settings.s3_secret_key),
+                "s3_bucket": bool(settings.s3_bucket)
+            }
+
+        # Initialize S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.s3_access_key,
+            aws_secret_access_key=settings.s3_secret_key,
+            endpoint_url=settings.s3_endpoint_url,
+            region_name=settings.s3_region
+        )
+        
+        # Test S3 connection
+        try:
+            response = s3_client.list_objects_v2(Bucket=settings.s3_bucket, MaxKeys=1)
+            return {
+                "status": "success",
+                "message": "S3 connection successful",
+                "bucket": settings.s3_bucket,
+                "endpoint": settings.s3_endpoint_url,
+                "region": settings.s3_region,
+                "object_count": response.get('KeyCount', 0)
+            }
+        except ClientError as e:
+            return {
+                "status": "error",
+                "message": f"S3 connection failed: {str(e)}",
+                "error_code": e.response.get('Error', {}).get('Code', 'Unknown')
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to test S3 connection: {str(e)}",
+            "error_type": type(e).__name__
+        }
+
+
 @app.post("/api/download-sample-photos-to-s3")
 async def download_sample_photos_to_s3():
     """Download sample photos directly to Object Storage"""
@@ -550,12 +602,15 @@ async def download_sample_photos_to_s3():
         ]
 
         uploaded_count = 0
+        errors = []
 
         for photo in sample_photos:
             try:
                 # Download the image
+                print(f"Downloading {photo['url']}")
                 response = requests.get(photo["url"], timeout=10)
                 response.raise_for_status()
+                print(f"Downloaded {photo['filename']}, size: {len(response.content)} bytes")
                 
                 # Upload directly to S3
                 s3_key = f"sample_photos/{photo['filename']}"
@@ -570,12 +625,15 @@ async def download_sample_photos_to_s3():
                 print(f"Uploaded {photo['filename']} to S3")
 
             except Exception as e:
-                print(f"Failed to upload {photo['filename']}: {e}")
+                error_msg = f"Failed to upload {photo['filename']}: {e}"
+                print(error_msg)
+                errors.append(error_msg)
 
         return {
             "status": "success",
             "message": f"Uploaded {uploaded_count} sample photos to Object Storage",
-            "uploaded_count": uploaded_count
+            "uploaded_count": uploaded_count,
+            "errors": errors
         }
 
     except Exception as e:
